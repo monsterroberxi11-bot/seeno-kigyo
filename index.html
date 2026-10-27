@@ -1,0 +1,1555 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>せーの！起業ダイス</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root { --bg:#fff8ec; --card:#fff; --ink:#2b2b2b; --sub:#7a6f62; --line:#e7dccb; --acc:#e8743b; --acc2:#2f7dd1; --once:#8a4fd1; --bad:#d23c3c; --good:#1f9d55; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family: "Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif; font-size:15px; }
+header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 16px; background:#2b2b2b; color:#fff; position:sticky; top:0; z-index:5; }
+header h1 { font-size:18px; margin:0; }
+#info { font-size:13px; text-align:right; }
+button.fs { padding:5px 10px; font-size:12px; background:transparent; color:#fff; border-color:#666; }
+main { max-width:980px; margin:0 auto; padding:12px 16px 40px; }
+h2 { font-size:17px; margin:16px 0 8px; }
+button { font:inherit; border:0; border-radius:10px; padding:9px 14px; background:var(--acc); color:#fff; cursor:pointer; font-weight:bold; }
+button.sub { background:#fff; color:var(--ink); border:2px solid var(--line); }
+button.blue { background:var(--acc2); }
+button.purple { background:var(--once); }
+button:disabled { opacity:.4; cursor:default; }
+input[type=text] { font:inherit; padding:8px 10px; border:2px solid var(--line); border-radius:10px; width:100%; max-width:240px; }
+.panel { background:var(--card); border:2px solid var(--line); border-radius:14px; padding:12px; margin:10px 0; }
+.row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.muted { color:var(--sub); font-size:13px; }
+.msg { color:var(--bad); font-weight:bold; }
+.boards { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+@media (max-width:700px) { .boards { grid-template-columns:repeat(2,1fr); } }
+.board { background:#fff; border-radius:12px; border:3px solid var(--c); padding:8px; position:relative; }
+.board .top { display:flex; align-items:center; gap:6px; font-weight:bold; }
+.board .em { font-size:24px; }
+.board .faces { font-size:12px; color:var(--sub); margin-top:4px; }
+.board .cnt { margin-top:4px; font-size:14px; }
+.board .who { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; }
+.board.swap::after { content:"次に入れかわる"; position:absolute; top:-10px; right:6px; background:var(--bad); color:#fff; font-size:11px; padding:1px 6px; border-radius:6px; }
+.board.pickable { cursor:pointer; }
+.board.pickable:hover { transform:translateY(-2px); box-shadow:0 4px 0 var(--c); }
+.neg { color:var(--bad); font-weight:bold; }
+.seats { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; }
+.seat { background:#fff; border:2px solid var(--line); border-radius:12px; padding:8px; }
+.seat.me { border-color:var(--acc2); }
+.seat .nm { font-weight:bold; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.dot { display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--pc); }
+.tag { font-size:11px; padding:1px 6px; border-radius:6px; background:var(--pc); color:#fff; }
+.oya { background:#2b2b2b; color:#ffd34d; font-size:11px; padding:1px 6px; border-radius:6px; }
+.money { font-size:20px; font-weight:bold; margin:2px 0; }
+.chips { display:flex; flex-wrap:wrap; gap:4px; }
+.chip { font-size:12px; padding:2px 7px; border-radius:8px; background:#f1ebe0; border:1px solid var(--line); }
+.chip.once { background:#efe3fb; border-color:#cbb0ec; color:#5a2b98; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; }
+.card { background:#fffdf8; border:2px solid var(--line); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+.card.once { border-color:#cbb0ec; background:#faf5ff; }
+.card .cost { font-weight:bold; color:var(--acc); }
+.card .nm { font-weight:bold; }
+.card .tx { font-size:13px; flex:1; }
+.dice { display:flex; flex-wrap:wrap; gap:4px; }
+.die { min-width:30px; height:30px; padding:0 4px; border-radius:7px; background:#fff; border:2px solid var(--ink); display:inline-flex; align-items:center; justify-content:center; font-weight:bold; }
+.die.x { border-color:var(--acc2); color:var(--acc2); }
+.die.n { color:var(--bad); border-color:var(--bad); }
+button.die { background:#fff; color:var(--ink); padding:0 4px; }
+table { border-collapse:collapse; width:100%; font-size:14px; }
+td, th { padding:6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+.gain { font-weight:bold; }
+.gain.p { color:var(--good); } .gain.m { color:var(--bad); }
+.log { font-size:12px; color:var(--sub); max-height:160px; overflow:auto; }
+.big { font-size:18px; padding:12px 22px; }
+.gate { text-align:center; padding:40px 12px; }
+.gate .who { font-size:24px; font-weight:bold; margin:12px 0; }
+details summary { cursor:pointer; font-weight:bold; }
+.rank1 { font-size:20px; font-weight:bold; }
+
+/* 卓（麻雀卓みたいな緑のフェルト） */
+main.game { max-width:1100px; padding:10px 8px 40px; }
+.felt { display:grid; gap:10px; grid-template-areas:"top top top" "left center right" "me me me";
+  background:radial-gradient(ellipse at 50% 45%, #2f8f52 0%, #237342 60%, #185a32 100%);
+  border:14px solid #6b3f1d; border-radius:30px; padding:12px; color:#fff;
+  box-shadow:inset 0 0 0 3px #8a5a2e, inset 0 0 50px rgba(0,0,0,.35), 0 8px 0 #4a2a12, 0 16px 30px rgba(0,0,0,.25); }
+@media (max-width:640px) { .felt { border-width:8px; border-radius:20px; padding:8px; gap:8px; } }
+.tt { grid-area:top; display:flex; flex-wrap:wrap; justify-content:space-evenly; gap:8px; }
+.tl { grid-area:left; display:flex; flex-direction:column; justify-content:space-evenly; gap:10px; }
+.tr { grid-area:right; display:flex; flex-direction:column; justify-content:space-evenly; gap:10px; }
+.tc { grid-area:center; min-width:0; background:rgba(0,0,0,.13); border:2px dashed rgba(255,255,255,.22); border-radius:20px; padding:10px; }
+/* 自分の席（手札）は画面の下にくっつけて、いつでもドラッグできるように */
+.tm { grid-area:me; position:sticky; bottom:0; z-index:6; }
+.felt .panel, .felt .board, .sheet { color:var(--ink); }
+.felt .panel { margin:0 0 10px; box-shadow:0 4px 0 rgba(0,0,0,.18); }
+.banner { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.bn-mid { text-align:center; font-size:13px; line-height:1.5; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+.bn-mid b { font-size:16px; }
+.deckpile.sm { width:46px; height:64px; font-size:11px; border-width:2px; }
+.deckpile.eff { background:repeating-linear-gradient(45deg,#2f7dd1 0 6px,#3b8be0 6px 12px); color:#fff; }
+
+/* まわりの席 */
+.tseat { position:relative; background:rgba(0,0,0,.28); border:2px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 8px 6px;
+  display:flex; flex-direction:column; align-items:center; gap:3px; min-width:88px; max-width:150px; cursor:pointer; transition:transform .15s; }
+.tseat:hover { transform:translateY(-2px); }
+.tseat.turn, .myseat.turn { border-color:#ffd34d; animation:glow 1s ease-in-out infinite alternate; }
+@keyframes glow { from { box-shadow:0 0 0 0 rgba(255,211,77,.0); } to { box-shadow:0 0 18px 4px rgba(255,211,77,.75); } }
+.ava { position:relative; width:42px; height:42px; border-radius:50%; background:var(--pc); border:3px solid #fff; display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:18px; color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.25); flex:none; }
+.oyab { position:absolute; right:-10px; top:-8px; background:#2b2b2b; color:#ffd34d; font-size:10px; padding:1px 5px; border-radius:6px; border:1px solid #ffd34d; }
+.sinfo { text-align:center; }
+.snm { font-weight:bold; font-size:13px; text-shadow:0 1px 2px rgba(0,0,0,.5); word-break:break-all; }
+.smoney { font-weight:900; font-size:16px; color:#ffe9a3; }
+.sst { font-size:11px; color:#d9f0dd; min-height:14px; }
+.minifan { display:flex; justify-content:center; height:26px; padding-top:2px; }
+.mini { width:15px; height:22px; margin-left:-7px; border-radius:3px; border:1.5px solid #fff; background:#f3b73e; transform-origin:50% 120%; transform:rotate(var(--r)); box-shadow:0 1px 2px rgba(0,0,0,.3); }
+.mini:first-child { margin-left:0; }
+.mini.once { background:#a77be0; }
+.mini.new, .hcard.new { animation:pop .5s cubic-bezier(.3,1.6,.5,1) both; }
+.bub { background:#fff; color:var(--ink); border-radius:10px; padding:4px 6px; display:flex; flex-wrap:wrap; align-items:center; gap:3px; justify-content:center; box-shadow:0 3px 0 rgba(0,0,0,.2); }
+.bub .die { min-width:22px; height:22px; font-size:12px; border-radius:5px; border-width:1.5px; }
+.bub .gain { margin-left:4px; }
+
+/* 手前の席と、UNOみたいな手札 */
+.myseat { background:#164a2b; box-shadow:0 -6px 16px rgba(0,0,0,.3); border:2px solid rgba(255,255,255,.18); border-radius:16px; padding:8px 10px 4px; }
+.myhead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.mymoney { font-weight:900; font-size:22px; color:#ffe9a3; text-shadow:0 2px 0 rgba(0,0,0,.3); }
+.handfan { display:flex; justify-content:center; align-items:flex-end; min-height:150px; padding:18px 0 6px; }
+.hcard { width:96px; height:132px; margin-left:-22px; flex:none; background:#fffdf7; color:var(--ink); border:3px solid #f3b73e; border-radius:12px; padding:6px;
+  display:flex; flex-direction:column; gap:3px; position:relative; transform-origin:50% 130%; transform:translateY(var(--y)) rotate(var(--r));
+  box-shadow:0 4px 10px rgba(0,0,0,.3); transition:transform .18s, box-shadow .18s; cursor:default; }
+.hcard:first-child { margin-left:0; }
+.hcard:hover { transform:translateY(calc(var(--y) - 22px)) rotate(var(--r)) scale(1.08); z-index:3; box-shadow:0 10px 18px rgba(0,0,0,.35); }
+.hcard.once { border-color:#a77be0; background:#faf5ff; }
+.hc-cost { font-size:11px; font-weight:bold; color:var(--acc); }
+.hc-nm { font-weight:900; font-size:13px; line-height:1.2; }
+.hc-tx { font-size:10.5px; line-height:1.3; color:#555; }
+.hc-once { position:absolute; bottom:5px; right:6px; font-size:10px; color:#5a2b98; font-weight:bold; }
+@media (max-width:640px) {
+  .hcard { width:70px; height:100px; margin-left:-18px; padding:4px; }
+  .hc-nm { font-size:11px; } .hc-tx { font-size:9px; }
+  .handfan { min-height:116px; }
+  .tt { flex-wrap:nowrap; gap:4px; }
+  .tseat { flex:1 1 0; min-width:0; padding:6px 2px 4px; }
+  .snm { font-size:11px; }
+  .smoney { font-size:14px; }
+  .ava { width:34px; height:34px; font-size:15px; }
+}
+.felt .boards { grid-template-columns:repeat(2,1fr); }
+.felt .cards { grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); }
+.felt .card { padding:8px; }
+.felt .card .tx { font-size:12px; }
+.felt .card button { padding:7px 10px; }
+.felt .board { box-shadow:0 4px 0 rgba(0,0,0,.2); }
+.felt .board .who .tag { font-size:10px; }
+
+/* ほかの人のカードを見るシート */
+.sheet-bg { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:15; display:flex; align-items:flex-end; justify-content:center; }
+.sheet { background:#fff; width:min(720px,100%); max-height:70vh; overflow:auto; border-radius:18px 18px 0 0; padding:14px 16px 20px; animation:up .25s ease-out; }
+@keyframes up { from { transform:translateY(100%); } to { transform:none; } }
+
+/* 山札のまわりに円く並ぶ業界カード */
+.ring { position:relative; width:min(100%, 50vh, 460px); aspect-ratio:1; margin:0 auto 6px; border-radius:50%;
+  background:radial-gradient(circle, #2c8a4e 0%, #237342 62%, #1d6638 100%); box-shadow:inset 0 0 0 4px rgba(255,255,255,.12), inset 0 0 30px rgba(0,0,0,.25); }
+/* 業界カードがのる円の線 */
+
+.deckpile.center { position:absolute; left:50%; top:50%; width:19%; height:auto; aspect-ratio:.72; font-size:clamp(9px,1.5vh,12px);
+  transform:translate(-50%,-50%) perspective(400px) rotateX(16deg); z-index:1; }
+/* 業界カードは丸いコインみたいな形 */
+.iboard { position:absolute; transform:translate(-50%,-50%); width:27%; aspect-ratio:1; border-radius:50%; color:var(--ink);
+  background:radial-gradient(circle at 50% 35%, #fff 0%, #fffdf5 60%, #f1e8d6 100%); border:5px solid var(--c);
+  box-shadow:0 0 0 2px #fff, 0 5px 0 rgba(0,0,0,.3); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; line-height:1.1; font-size:clamp(8px,1.3vh,11px); padding:4px; transition:transform .15s; z-index:2; }
+.ring .iboard .ib-who { position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); flex-wrap:nowrap; }
+.ib-em { font-size:2em; line-height:1.05; }
+.ib-nm { font-weight:900; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis; }
+.ib-dice { font-size:.8em; letter-spacing:-2px; }
+.ib-ev { font-size:.85em; color:var(--sub); }
+.ib-faces { font-size:.8em; color:var(--sub); }
+.ib-who { display:flex; flex-wrap:wrap; justify-content:center; gap:2px; margin-top:2px; }
+.pdot { min-width:18px; height:18px; border-radius:9px; background:var(--pc); color:#fff; font-size:10px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; gap:1px; padding:0 3px; border:1.5px solid #fff; }
+.pdot small { font-size:8px; opacity:.9; }
+.iboard.pickable { cursor:pointer; }
+.ring.picking .iboard.pickable { animation:pulse 1.2s ease-in-out infinite; }
+/* マウスをのせると、まっすぐ起きて大きくなる */
+.iboard:hover { transform:translate(-50%,-50%) scale(1.12); z-index:4; }
+.iboard.pickable:hover { animation:none !important; }
+@keyframes pulse { 0%,100% { box-shadow:0 0 0 2px #fff, 0 5px 0 rgba(0,0,0,.3), 0 0 0 2px rgba(255,211,77,0); } 50% { box-shadow:0 0 0 2px #fff, 0 5px 0 rgba(0,0,0,.3), 0 0 0 8px rgba(255,211,77,.85); } }
+.iboard.mine { box-shadow:0 0 0 2px #fff, 0 0 0 6px #ffd34d, 0 5px 0 rgba(0,0,0,.3); }
+.iboard.swap::after { content:"次に入れかわる"; position:absolute; top:-11px; left:50%; transform:translateX(-50%); white-space:nowrap; background:var(--bad); color:#fff; font-size:10px; padding:1px 5px; border-radius:6px; }
+
+/* 配られて飛んでいくカード */
+.flycard { position:fixed; width:36px; height:50px; border-radius:6px; z-index:30; pointer-events:none; border:2px solid #fff;
+  background:repeating-linear-gradient(45deg,#2b2b2b 0 5px,#3d3d3d 5px 10px); box-shadow:0 4px 8px rgba(0,0,0,.4); }
+.card.flip { animation:flip .55s ease-out both; position:relative; }
+.card.flip::after { content:""; position:absolute; inset:-2px; border-radius:12px; pointer-events:none;
+  background:repeating-linear-gradient(45deg,#2b2b2b 0 6px,#3d3d3d 6px 12px); border:3px solid #fff; animation:dealback .55s both; animation-delay:inherit; }
+@keyframes flip { 0% { transform:rotateY(180deg); } 100% { transform:none; } }
+.buyp { margin:6px 0 0 !important; }
+
+/* 画面に収まるように、ぜんぶ少し小さめに */
+.felt .tseat { flex-direction:row; flex-wrap:wrap; justify-content:center; padding:5px 6px; gap:2px 6px; }
+.felt .tseat .ava { width:32px; height:32px; font-size:14px; border-width:2px; }
+.felt .tseat .minifan, .felt .tseat .sst { width:100%; }
+.felt .tseat .minifan { height:20px; }
+.felt .tseat .mini { width:12px; height:17px; margin-left:-6px; }
+.felt .tseat .bub { width:100%; }
+.felt .myseat { padding:6px 8px 2px; }
+.felt .mymoney { font-size:18px; }
+.felt .handfan { min-height:0; padding:10px 0 2px; }
+.felt .hcard { width:78px; height:104px; margin-left:-16px; padding:4px; }
+.felt .hc-tx { font-size:9.5px; }
+.felt .tc { padding:6px; }
+.banner { margin-bottom:4px; }
+.felt .deckpile.sm { width:36px; height:50px; font-size:9px; }
+@media (max-width:640px) {
+  .felt .hcard { width:62px; height:86px; margin-left:-14px; }
+  .felt .hc-tx { display:none; }
+}
+
+/* 拡大 */
+.zbtn { background:rgba(255,255,255,.85); border:1px solid var(--line); color:var(--ink); padding:0; width:24px; height:24px; border-radius:50%; font-size:12px; line-height:1; flex:none; }
+.ib-z { position:absolute; top:-4px; right:-4px; width:22px; height:22px; font-size:11px; box-shadow:0 2px 0 rgba(0,0,0,.25); z-index:3; }
+.hcard { cursor:pointer; }
+.zoom-bg { position:fixed; inset:0; background:rgba(15,10,5,.6); z-index:25; display:flex; align-items:center; justify-content:center; padding:16px; }
+.zoom-box { display:flex; flex-direction:column; align-items:center; animation:zoomin .25s cubic-bezier(.3,1.4,.5,1); max-height:100%; overflow:auto; }
+@keyframes zoomin { from { transform:scale(.5); opacity:0; } to { transform:none; opacity:1; } }
+.zcard { width:min(320px,86vw); min-height:min(430px,70vh); background:#fffdf7; border:6px solid #f3b73e; border-radius:22px; padding:18px; display:flex; flex-direction:column; gap:12px; box-shadow:0 14px 30px rgba(0,0,0,.4); }
+.zcard.once { border-color:#a77be0; background:#faf5ff; }
+.zc-kind { font-size:13px; font-weight:bold; color:var(--sub); }
+.zc-cost { font-size:22px; font-weight:900; color:var(--acc); }
+.zc-nm { font-size:28px; font-weight:900; line-height:1.2; }
+.zc-tx { font-size:18px; font-weight:bold; background:#f5efe3; border-radius:12px; padding:10px; }
+.zcard.once .zc-tx { background:#efe3fb; }
+.zc-more { font-size:15px; line-height:1.6; color:#444; }
+.zind { width:min(320px,84vw); aspect-ratio:1; border-radius:50%; border:10px solid var(--c); background:radial-gradient(circle at 50% 35%, #fff 0%, #fffdf5 60%, #f1e8d6 100%);
+  box-shadow:0 0 0 4px #fff, 0 14px 30px rgba(0,0,0,.45); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; padding:20px; }
+.zi-em { font-size:56px; line-height:1; }
+.zi-nm { font-size:26px; font-weight:900; }
+.zi-row { font-size:15px; }
+.zi-faces { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+.zi-note { font-size:12px; color:var(--sub); }
+.zi-who { font-size:13px; }
+.zhelp { color:#fff; text-align:center; font-size:14px; margin:12px 0 0; max-width:340px; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+
+/* ドラッグ */
+.hcard[data-k] { touch-action:none; }
+.hcard.once[data-k] { cursor:grab; }
+.hcard.dragsrc { opacity:.25; }
+.dragghost { position:fixed; z-index:40; pointer-events:none; margin:0 !important; transform:rotate(-6deg) scale(1.1) !important; box-shadow:0 18px 30px rgba(0,0,0,.45) !important; }
+body.dragmode .tc { border-color:#ffd34d; background:rgba(255,211,77,.12); }
+.tc.drop-hover { background:rgba(255,211,77,.25) !important; }
+.iboard.drop-hover { transform:translate(-50%,-50%) scale(1.15); box-shadow:0 0 0 2px #fff, 0 0 0 8px #ffd34d, 0 5px 0 rgba(0,0,0,.3); }
+.die.drop-hover { background:#ffd34d !important; transform:scale(1.2); }
+.draghint { font-size:12px; color:#ffe9a3; margin-top:4px; }
+#toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,40px); background:#2b2b2b; color:#fff; padding:10px 16px; border-radius:12px; font-weight:bold;
+  z-index:45; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; max-width:min(90vw,460px); text-align:center; }
+#toast.show { opacity:1; transform:translate(-50%,0); }
+
+/* カードを配るモーション */
+.dealrow { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.deckpile { width:58px; height:80px; border-radius:9px; flex:none; background:repeating-linear-gradient(45deg,#2b2b2b 0 6px,#3d3d3d 6px 12px); border:3px solid #fff;
+  box-shadow:2px 2px 0 #d8ccb8, 4px 4px 0 #c9bba3, 6px 6px 0 #b9aa90; color:#ffd34d; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px;
+  transform:perspective(400px) rotateX(18deg); }
+.cards { perspective:900px; }
+.card.deal { position:relative; animation:deal .75s cubic-bezier(.2,.8,.3,1.08) both; }
+.card.deal::after { content:""; position:absolute; inset:-2px; border-radius:12px; pointer-events:none;
+  background:repeating-linear-gradient(45deg,#2b2b2b 0 6px,#3d3d3d 6px 12px); border:3px solid #fff; animation:dealback .75s both; animation-delay:inherit; }
+@keyframes deal {
+  0% { transform:translate(-30vw,-180px) rotateY(180deg) rotateZ(-25deg) scale(.4); opacity:0; }
+  12% { opacity:1; }
+  100% { transform:none; opacity:1; }
+}
+@keyframes dealback { 0%, 48% { opacity:1; } 52%, 100% { opacity:0; } }
+.chip.new { animation:pop .5s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes pop { 0% { transform:scale(0) rotate(-20deg); } 100% { transform:none; } }
+
+/* 3Dサイコロ */
+#stage { position:fixed; inset:0; background:rgba(20,15,10,.55); display:flex; align-items:center; justify-content:center; z-index:20; padding:16px; cursor:pointer; }
+#stage.hidden { display:none; }
+.tray { background:radial-gradient(circle at 50% 40%,#3f8a4a,#24552c); border:8px solid #7a4b25; border-radius:20px; width:min(560px,100%);
+  padding:16px 12px 18px; text-align:center; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,.45); overflow:hidden; }
+.tray .who { font-weight:bold; font-size:18px; }
+.dice3d { display:flex; flex-wrap:wrap; justify-content:center; gap:26px; min-height:120px; align-items:flex-end; padding:40px 0 14px; perspective:700px; }
+.cw { position:relative; width:64px; height:64px; }
+.cw .shadow { position:absolute; left:6px; right:6px; bottom:-12px; height:12px; border-radius:50%; background:rgba(0,0,0,.4); filter:blur(3px); }
+.cube { position:absolute; inset:0; transform-style:preserve-3d; }
+.face { position:absolute; inset:0; border-radius:11px; background:#fffdf7; border:4px solid var(--c); display:flex; align-items:center; justify-content:center;
+  font-size:26px; font-weight:900; color:#222; backface-visibility:hidden; box-shadow:inset 0 0 12px rgba(0,0,0,.18); }
+.face.n { color:var(--bad); }
+.tray .sum { font-size:28px; font-weight:900; min-height:38px; opacity:0; transform:scale(.6); transition:opacity .3s, transform .3s cubic-bezier(.3,1.6,.5,1); }
+.tray .sum.show { opacity:1; transform:none; }
+.tray .skip { font-size:12px; opacity:.7; margin-top:4px; }
+</style>
+</head>
+<body>
+<header><h1>🎲 せーの！起業ダイス</h1><div class="row" style="gap:10px"><div id="info"></div><button class="sub fs" onclick="toggleFs()">⛶ 全画面</button></div></header>
+<main id="app"></main>
+<div id="zoom"></div>
+<div id="toast"></div>
+<div id="stage" class="hidden" onclick="skipRoll()">
+  <div class="tray"><div class="who"></div><div class="dice3d"></div><div class="sum"></div><div class="skip">タップでとばす</div></div>
+</div>
+
+<script>
+const ROUNDS = 12, MAX_SEATS = 6, START_MONEY = 10, HAND_MAX = 5, EFF_COUNT = 10, EFF_COST = 3;
+const PEER_PREFIX = "seeno-kigyo-room-";
+const SEAT_COLORS = ["#2f7dd1", "#e8743b", "#1f9d55", "#c2417a", "#8a4fd1", "#b08a12"];
+const CPU_NAMES = ["CPU たろう", "CPU はなこ", "CPU じろう", "CPU さくら", "CPU けんた"];
+
+// ダイスの面
+const DIE = {
+  K: [1, 2, 2, 3, 3, 4],      // 堅実
+  G: [1, 2, 3, 3, 4, 4],      // 成長
+  S: [1, 2, 3, 4, 5, 6],      // ふつう
+  H: [-2, 1, 2, 4, 5, 7],     // 波あり
+  R: [-3, 0, 3, 5, 6, 10],    // ハイリスク
+  I: [-3, 2, 5, 8, 11, 16],   // 一発勝負
+  B: [3, 5, 6, 7, 8, 11],     // 大型
+  X: [1, 2, 3, 1, 2, 3]       // 拡張戦略
+};
+const INDUSTRIES = [
+  { name: "ラーメン屋", em: "🍜", die: "K", n: 4, col: "#e8743b" },
+  { name: "コンビニ", em: "🏪", die: "G", n: 4, col: "#2f9e8f" },
+  { name: "動画配信", em: "📹", die: "H", n: 3, col: "#d23c3c" },
+  { name: "野菜農園", em: "🥕", die: "G", n: 3, col: "#5a9e2f" },
+  { name: "学習アプリ", em: "📱", die: "G", n: 3, col: "#2f7dd1" },
+  { name: "テーマパーク", em: "🎢", die: "H", n: 3, col: "#c2417a" },
+  { name: "宅配便", em: "🚚", die: "S", n: 2, col: "#8a6a3b" },
+  { name: "マンション", em: "🏢", die: "S", n: 2, col: "#6b7280" },
+  { name: "ゲーム会社", em: "🎮", die: "S", n: 2, col: "#7c3aed" },
+  { name: "太陽光発電", em: "☀️", die: "S", n: 2, col: "#d4a017" },
+  { name: "ロボット工場", em: "🤖", die: "R", n: 2, col: "#475569" },
+  { name: "新薬研究", em: "💊", die: "R", n: 2, col: "#0e9f6e" },
+  { name: "ロケット", em: "🚀", die: "H", n: 2, col: "#1e3a8a" },
+  { name: "スマホ部品", em: "🔩", die: "I", n: 1, col: "#0f766e" },
+  { name: "大型発電所", em: "⚡", die: "B", n: 1, col: "#b45309" },
+  { name: "パン屋", em: "🥐", die: "K", n: 4, col: "#c08a3e" },
+  { name: "キャンプ場", em: "⛺", die: "H", n: 3, col: "#3f7d3a" },
+  { name: "水族館", em: "🐠", die: "S", n: 2, col: "#0284c7" },
+  { name: "ドローン配達", em: "🛸", die: "R", n: 2, col: "#64748b" }
+];
+// v = CPUが考える「1ラウンドあたりの値うち」（使い切りは1回分）
+const CARDS = {
+  eff:     { name: "効率化", cost: 3, text: "出目の合計 +1", copies: 0, v: 1 },
+  sub:     { name: "サブスク", cost: 7, text: "出目の合計 +2", copies: 3, v: 2 },
+  brand:   { name: "ブランド化", cost: 14, text: "出目の合計 +3", copies: 2, v: 3 },
+  plat:    { name: "プラットフォーマー", cost: 21, text: "出目の合計 +4", copies: 2, v: 4 },
+  great:   { name: "偉人", cost: 45, text: "出目の合計 ×2", copies: 1, v: 7 },
+  mass:    { name: "大量生産", cost: 4, text: "3個以上振ったとき 出目の合計 +2", copies: 3, v: 1 },
+  high:    { name: "高成果", cost: 4, text: "合計が10以上なら 資金 +3", copies: 3, v: 1.2 },
+  design:  { name: "デザイナー", cost: 5, text: "出目がぜんぶ偶数なら 出目の合計 +3", copies: 3, v: .6 },
+  engi:    { name: "エンジニア", cost: 6, text: "出目がぜんぶ奇数なら 出目の合計 +4", copies: 3, v: .7 },
+  mono:    { name: "市場独占", cost: 7, text: "誰ともかぶらなかったら 資金 +5", copies: 3, v: 1.5 },
+  adv:     { name: "逆境の才能", cost: 7, text: "出目の合計が4以下なら 資金 +7", copies: 3, v: 1.2 },
+  syn:     { name: "シナジー", cost: 9, text: "3個以上振って 同じ目が2つ +3／3つ +6／4つ以上 +10", copies: 2, v: 1.5 },
+  staff:   { name: "人員増強", cost: 10, text: "枚数に数えない。さらにもう1枚多く持てる", copies: 2, v: .8 },
+  pivot:   { name: "ピボット", cost: 11, text: "3人以上で同じ業界になったら 1回振り直せる", copies: 2, v: .8 },
+  expand:  { name: "拡張戦略", cost: 12, text: "振るとき「1・2・3」ダイスが1個ふえる", copies: 2, v: 2 },
+  risk:    { name: "リスクマネジメント", cost: 14, text: "マイナスの目を0にする", copies: 2, v: 1 },
+  fail:    { name: "失敗からの学び", cost: 14, text: "マイナスの目1個につき 資金 +5", copies: 2, v: 1.3 },
+  invest:  { name: "設備投資", cost: 18, text: "出目の合計が4以下なら 資金 +15", copies: 2, v: 2.5 },
+  spec:    { name: "スペシャリスト", cost: 21, text: "ほかのスキルカード1枚につき 出目の合計 +1", copies: 1, v: 3 },
+  hh:      { name: "ヘッドハンティング", cost: 2, once: true, text: "山札からもう1枚引ける", copies: 3, v: 0 },
+  first:   { name: "先行者利益", cost: 4, once: true, text: "「せーの」のあと 業界を変えられる", copies: 3, v: 5 },
+  flex:    { name: "臨機応変", cost: 7, once: true, text: "振ったあと ダイス1個をいちばん大きい目にする", copies: 3, v: 8 },
+  lead:    { name: "リーダーシップ", cost: 7, once: true, text: "「せーの」で使うと すぐ親になる", copies: 2, v: 0 },
+  reskill: { name: "リスキリング", cost: 7, once: true, text: "捨て札から1枚選んで買える", copies: 2, v: 0 }
+};
+
+// 拡大したときに出す、くわしい説明
+const MORE = {
+  eff: "毎ターン、出目の合計に +1。何枚でも重ねて持てる。安くて手堅い。",
+  sub: "毎ターン、出目の合計に +2。ずっと効くので、早く買うほどお得。",
+  brand: "毎ターン、出目の合計に +3。中盤までに買えると強い。",
+  plat: "毎ターン、出目の合計に +4。高いけど、いちばん大きい足し算。",
+  great: "カードの効果を足したあとの合計を2倍にする。合計がマイナスだと、マイナスも2倍になるので注意。",
+  mass: "ダイスを3個以上振ったときだけ +2。ダイスが多い業界（🎲3〜4個）と相性がいい。",
+  high: "カードの効果も入れた最後の合計が10以上なら、資金を3もらえる。",
+  design: "振ったダイスの目がぜんぶ偶数なら +3（0やマイナスの偶数も偶数に入る）。",
+  engi: "振ったダイスの目がぜんぶ奇数なら +4。",
+  mono: "せーので業界を選んだとき、誰ともかぶらなかったら資金を5もらえる。",
+  adv: "出目の合計が4以下のとき、資金を7もらえる。ダイスが1個ももらえなかったとき（合計0）にも効く。",
+  syn: "ダイスを3個以上振って、同じ目がそろうとボーナス。2つで +3、3つで +6、4つ以上で +10。",
+  staff: "このカードは5枚の上限に数えない。さらに、持てる枚数が1枚ふえる。",
+  pivot: "3人以上が同じ業界を選んだとき、出た目が気に入らなければ1回だけ振り直せる。",
+  expand: "振るとき、「1・2・3」の青いダイスが1個ふえる。ダイスを1個ももらえなかったときはふえない。",
+  risk: "マイナスの目を0として数える。マイナスの目がある業界で安心して勝負できる。",
+  fail: "マイナスの目が1個出るごとに資金を5もらえる。リスクマネジメントと一緒に持っていても、ちゃんともらえる。",
+  invest: "出目の合計が4以下のとき、資金を15もらえる。ダイスがもらえなかったときにも効く。",
+  spec: "持っているほかのスキルカード1枚につき +1（使い切りカードは数えない）。カードを集めるほど強くなる。",
+  hh: "使い切り。買い物のときに使うと、山札からもう1枚引いて、買えるカードがふえる。",
+  first: "使い切り。せーのでみんなの業界が見えたあとに、ほかの業界へ変えられる。",
+  flex: "使い切り。振ったあと、ダイス1個をタップすると、その業界のダイスでいちばん大きい目になる。",
+  lead: "使い切り。業界を選ぶときにチェックすると、すぐ親になれる。親はかぶったときにダイスを先にもらえる。",
+  reskill: "使い切り。捨て札の中から好きなカードを1枚選んで、そのカードの値段で買える。"
+};
+
+// ホストだけが持つ本当の状態
+let S = null;
+// 画面に出す状態（ホストも参加者も同じ形）。ME = 画面を見ている席（-1 は見るだけ）
+let V = null, ME = -1;
+let isHost = false, peer = null, hostConn = null;
+const conns = new Map();
+let lobby = { step: "start", msg: "" };
+let ui = { lead: false, discardOpen: false, unlocked: -1, localName: "", peek: -1, zoom: null };
+let rollTimer = null;
+
+const rand = n => Math.floor(Math.random() * n);
+const rnd = a => a[rand(a.length)];
+const sum = a => a.reduce((x, y) => x + y, 0);
+const avg = a => sum(a) / a.length;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const indOf = b => INDUSTRIES[(V || S).boards[b]];
+const evOf = ind => avg(DIE[ind.die]) * ind.n;
+
+// ===== ルール（ホストで動く） =====
+const mkSeat = (name, kind, id) => ({ name, kind, id, money: START_MONEY, hand: [] });
+const count = (p, k) => p.hand.filter(x => x === k).length;
+const handCount = p => p.hand.filter(k => k !== "staff").length;
+const handLimit = p => HAND_MAX + count(p, "staff");
+const orderFrom = o => S.seats.map((_, i) => (o + i) % S.seats.length);
+function log(m) { S.log.push(m); if (S.log.length > 60) S.log.shift(); }
+
+function draw() {
+  if (!S.deck.length) { S.deck = shuffle(S.discard); S.discard = []; }
+  return S.deck.pop() || null;
+}
+function consume(si, k) {
+  const p = S.seats[si], h = p.hand.indexOf(k);
+  if (h < 0) return false;
+  p.hand.splice(h, 1); S.discard.push(k);
+  return true;
+}
+
+function newGame() {
+  const pool = shuffle(INDUSTRIES.map((_, i) => i));
+  Object.assign(S, {
+    phase: "buy", round: 1, oya: rand(S.seats.length), log: [], gid: Date.now(),
+    deck: shuffle(Object.entries(CARDS).flatMap(([k, c]) => Array(c.copies).fill(k))),
+    discard: [], effLeft: EFF_COUNT, boards: pool.splice(0, S.seats.length), pool
+  });
+  S.seats.forEach(p => { p.money = START_MONEY; p.hand = []; });
+  log(`ゲーム開始！ 親は ${S.seats[S.oya].name}`);
+  startRound();
+}
+
+function startRound() {
+  S.phase = "buy";
+  S.seats.forEach(p => Object.assign(p, {
+    buy: { offer: [draw(), draw(), draw()].filter(Boolean), bought: 0, eff: false, done: false },
+    pick: null, lead: false, fmWait: false, fmTo: null, dice: 0, roll: null, res: null, ready: false
+  }));
+  S.seats.forEach((p, i) => { if (p.kind === "cpu") cpuBuy(i); });
+}
+
+const ACT = {
+  buy(si, p, a) {
+    const b = p.buy;
+    if (b.done) return;
+    if (a.t === "buy") {
+      const k = b.offer[a.i];
+      if (!k || p.money < CARDS[k].cost) return;
+      p.money -= CARDS[k].cost; b.offer.splice(a.i, 1); p.hand.push(k); b.bought++;
+      log(`${p.name} が「${CARDS[k].name}」を買った`);
+    } else if (a.t === "eff") {
+      if (S.effLeft <= 0 || b.eff || p.money < EFF_COST) return;
+      p.money -= EFF_COST; S.effLeft--; p.hand.push("eff"); b.bought++; b.eff = true;
+      log(`${p.name} が「効率化」を買った`);
+    } else if (a.t === "hh") {
+      const k = draw();
+      if (!k || !consume(si, "hh")) return;
+      b.offer.push(k);
+      log(`${p.name} がヘッドハンティングを使った`);
+    } else if (a.t === "reskill") {
+      const k = S.discard[a.d];
+      if (!p.hand.includes("reskill") || !k || p.money < CARDS[k].cost) return;
+      S.discard.splice(a.d, 1); consume(si, "reskill");
+      p.money -= CARDS[k].cost; p.hand.push(k);
+      log(`${p.name} がリスキリングで「${CARDS[k].name}」を買った`);
+    } else if (a.t === "drop") {
+      const k = p.hand[a.h];
+      if (!k) return;
+      p.hand.splice(a.h, 1);
+      if (k === "eff") S.effLeft++; else S.discard.push(k);
+      log(`${p.name} が「${CARDS[k].name}」を捨てた`);
+    } else if (a.t === "done") {
+      if (handCount(p) > handLimit(p)) return;
+      b.done = true;
+    }
+  },
+  select(si, p, a) {
+    if (a.t !== "pick" || p.pick !== null || !(a.b >= 0 && a.b < S.boards.length)) return;
+    p.pick = a.b;
+    p.lead = !!a.lead && p.hand.includes("lead");
+  },
+  fm(si, p, a) {
+    if (a.t !== "fm" || !p.fmWait) return;
+    p.fmWait = false;
+    p.fmTo = a.b >= 0 && a.b < S.boards.length && a.b !== p.pick ? a.b : null;
+  },
+  roll(si, p, a) {
+    if (S.order[S.rollPos] !== si) return;
+    const r = p.roll;
+    if (a.t === "roll" && !r) {
+      doRoll(si);
+    } else if (r && !r.final) {
+      if (a.t === "reroll" && canPivot(si) && !r.rerolled) {
+        r.faces = rollFaces(si); r.rerolled = true;
+        log(`${p.name} がピボットで振り直した`);
+      } else if (a.t === "flex" && !r.flexed && r.faces[a.d] && consume(si, "flex")) {
+        const f = r.faces[a.d];
+        f.v = Math.max(...DIE[f.d]); r.flexed = true;
+        log(`${p.name} が臨機応変で目を ${f.v} にした`);
+      } else if (a.t === "ok") {
+        finalize(si); return;
+      } else return;
+    } else return;
+    if (!rollOptions(si)) finalize(si);
+  },
+  end(si, p, a) { if (a.t === "ready") p.ready = true; }
+};
+
+function handle(si, a) {
+  const p = S.seats[si];
+  if (!p || !ACT[S.phase]) return;
+  ACT[S.phase](si, p, a);
+  check(); sync();
+}
+
+function needsInput(si) {
+  const p = S.seats[si];
+  switch (S.phase) {
+    case "buy": return !p.buy.done;
+    case "select": return p.pick === null;
+    case "fm": return p.fmWait;
+    case "roll": return S.order[S.rollPos] === si && !(p.roll && p.roll.final);
+    case "end": return !p.ready;
+  }
+  return false;
+}
+
+function check() {
+  for (let guard = 0; guard < 50; guard++) {
+    if (S.phase === "buy" && S.seats.every(p => p.buy.done)) {
+      S.seats.forEach(p => { S.discard.push(...p.buy.offer); p.buy.offer = []; });
+      S.phase = "select";
+      S.seats.forEach((p, i) => { if (p.kind === "cpu") cpuSelect(i); });
+    } else if (S.phase === "select" && S.seats.every(p => p.pick !== null)) {
+      reveal();
+    } else if (S.phase === "fm" && S.seats.every(p => !p.fmWait)) {
+      orderFrom(S.oya).forEach(i => {
+        const p = S.seats[i];
+        if (p.fmTo !== null && consume(i, "first")) {
+          log(`${p.name} が先行者利益で「${INDUSTRIES[S.boards[p.fmTo]].name}」に変えた`);
+          p.pick = p.fmTo;
+        }
+      });
+      startRolls();
+    } else if (S.phase === "roll" && advanceRoll()) {
+      S.phase = "end";
+      S.seats.forEach(p => { if (p.kind === "cpu") p.ready = true; });
+    } else if (S.phase === "end" && S.seats.every(p => p.ready)) {
+      endRound();
+    } else return;
+  }
+}
+
+function reveal() {
+  const leader = orderFrom(S.oya).find(i => S.seats[i].lead);
+  if (leader !== undefined) {
+    consume(leader, "lead"); S.oya = leader;
+    log(`${S.seats[leader].name} がリーダーシップで親になった`);
+  }
+  S.seats.forEach(p => { p.lead = false; });
+  log("せーの！ " + S.seats.map(p => `${p.name}→${INDUSTRIES[S.boards[p.pick]].name}`).join("、"));
+  if (S.seats.some(p => p.hand.includes("first"))) {
+    S.phase = "fm";
+    S.seats.forEach((p, i) => {
+      p.fmTo = null;
+      p.fmWait = p.hand.includes("first");
+      if (p.fmWait && p.kind === "cpu") { p.fmWait = false; p.fmTo = cpuFm(i); }
+    });
+  } else startRolls();
+}
+
+function startRolls() {
+  S.phase = "roll";
+  const ord = orderFrom(S.oya);
+  S.boards.forEach((ind, b) => {
+    const who = ord.filter(i => S.seats[i].pick === b);
+    for (let n = INDUSTRIES[ind].n, j = 0; n > 0 && who.length; n--, j++) S.seats[who[j % who.length]].dice++;
+  });
+  S.order = ord; S.rollPos = 0;
+}
+
+// 振る順番を進める。全員終わったら true
+function advanceRoll() {
+  while (S.rollPos < S.order.length) {
+    const si = S.order[S.rollPos], p = S.seats[si];
+    if (p.roll && p.roll.final) { S.rollPos++; continue; }
+    if (!p.dice) {
+      // ダイスがない人は振らずに計算だけ
+      if (!p.roll) doRoll(si);
+      finalize(si); S.rollPos++; continue;
+    }
+    if (p.kind === "cpu" && !rollTimer) {
+      // サイコロのモーションが見えるように、CPUは少し間をあけて振る
+      rollTimer = setTimeout(() => { rollTimer = null; cpuRoll(si); check(); sync(); }, 2800);
+    }
+    return false;
+  }
+  return true;
+}
+
+function rollFaces(si) {
+  const p = S.seats[si];
+  if (!p.dice) return [];
+  const d = INDUSTRIES[S.boards[p.pick]].die, f = [];
+  for (let i = 0; i < p.dice; i++) f.push({ d, v: rnd(DIE[d]) });
+  for (let i = 0; i < count(p, "expand"); i++) f.push({ d: "X", v: rnd(DIE.X) });
+  return f;
+}
+function doRoll(si) { S.seats[si].roll = { faces: rollFaces(si), rerolled: false, flexed: false, final: false }; }
+function canPivot(si) {
+  const p = S.seats[si];
+  return p.hand.includes("pivot") && p.dice > 0 && S.seats.filter(q => q.pick === p.pick).length >= 3;
+}
+function rollOptions(si) {
+  const p = S.seats[si], r = p.roll;
+  return (canPivot(si) && !r.rerolled) || (p.hand.includes("flex") && !r.flexed && r.faces.length > 0);
+}
+
+function evaluate(si, faces) {
+  const p = S.seats[si], c = k => count(p, k), lines = [];
+  let vals = faces.map(f => f.v);
+  const n = vals.length, negs = vals.filter(v => v < 0).length;
+  if (c("risk") && negs) { vals = vals.map(v => Math.max(0, v)); lines.push("リスクマネジメント：マイナス→0"); }
+  const dsum = sum(vals);
+  let total = dsum, extra = 0;
+  const add = (k, x) => { const m = c(k); if (m && x) { total += x * m; lines.push(`${CARDS[k].name} +${x * m}`); } };
+  if (n > 0) {
+    add("eff", 1); add("sub", 2); add("brand", 3); add("plat", 4);
+    if (n >= 3) add("mass", 2);
+    if (vals.every(v => v % 2 === 0)) add("design", 3);
+    if (vals.every(v => Math.abs(v) % 2 === 1)) add("engi", 4);
+    if (n >= 3) {
+      const cnt = {};
+      vals.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
+      const m = Math.max(...Object.values(cnt));
+      add("syn", m >= 4 ? 10 : m === 3 ? 6 : m === 2 ? 3 : 0);
+    }
+    add("spec", p.hand.filter(k => !CARDS[k].once && k !== "spec").length);
+    const g = c("great");
+    if (g) { total *= 2 ** g; lines.push(`偉人 ×${2 ** g}`); }
+  }
+  const bonus = (k, x, ok) => { const m = c(k); if (m && ok) { extra += x * m; lines.push(`${CARDS[k].name} 資金+${x * m}`); } };
+  bonus("high", 3, total >= 10);
+  bonus("mono", 5, S.seats.filter(q => q.pick === p.pick).length === 1);
+  bonus("adv", 7, dsum <= 4);
+  bonus("invest", 15, dsum <= 4);
+  bonus("fail", 5 * negs, negs > 0);
+  return { faces: faces.map(f => ({ ...f })), dsum, total, extra, gain: total + extra, lines };
+}
+
+function finalize(si) {
+  const p = S.seats[si], e = evaluate(si, p.roll.faces), before = p.money;
+  p.roll.final = true;
+  p.money = Math.max(0, p.money + e.gain);
+  e.delta = p.money - before;
+  p.res = e;
+  log(`${p.name}：${e.faces.length ? e.faces.map(f => f.v).join("・") : "ダイスなし"} → ${e.delta >= 0 ? "+" : ""}${e.delta}`);
+}
+
+function endRound() {
+  if (S.round >= ROUNDS) { S.phase = "over"; log("ゲーム終了！"); return; }
+  // 入れかわるのは、親が選んだ業界
+  const b = S.seats[S.oya].pick;
+  if (S.pool.length) {
+    const old = S.boards[b];
+    S.boards[b] = S.pool.shift();
+    log(`「${INDUSTRIES[old].name}」が「${INDUSTRIES[S.boards[b]].name}」に入れかわった`);
+  }
+  S.oya = (S.oya + 1) % S.seats.length;
+  S.round++;
+  startRound();
+}
+
+// ===== CPU =====
+function cpuBuy(si) {
+  const p = S.seats[si], b = p.buy, left = ROUNDS - S.round + 1;
+  // 得になるカードがなくなるまで、1枚ずつ買っていく
+  for (;;) {
+    const perRound = k => CARDS[k].once ? CARDS[k].v / left : CARDS[k].v;
+    const held = p.hand.filter(k => k !== "staff");
+    const lowest = held.length ? Math.min(...held.map(perRound)) : 0;
+    const full = handCount(p) >= handLimit(p);
+    const score = k => {
+      const c = CARDS[k];
+      if (c.once) return c.v - (full ? lowest * left : 0) - c.cost;
+      return (c.v - (full && k !== "staff" ? lowest : 0)) * left - c.cost;
+    };
+    let best = null, bestScore = 0;
+    b.offer.forEach((k, i) => {
+      if (CARDS[k].cost > p.money) return;
+      const s = score(k) + Math.random();
+      if (s > bestScore) { bestScore = s; best = { t: "buy", i }; }
+    });
+    if (!b.eff && S.effLeft > 0 && p.money >= EFF_COST && score("eff") > bestScore) best = { t: "eff" };
+    if (!best) break;
+    ACT.buy(si, p, best);
+    while (handCount(p) > handLimit(p)) {
+      let lo = -1, lv = Infinity;
+      p.hand.forEach((k, h) => { if (k !== "staff" && perRound(k) < lv) { lv = perRound(k); lo = h; } });
+      ACT.buy(si, p, { t: "drop", h: lo });
+    }
+  }
+  b.done = true;
+}
+
+function cpuSelect(si) {
+  const w = S.boards.map(ind => Math.pow(evOf(INDUSTRIES[ind]), 1.5) * (0.6 + Math.random() * 0.8));
+  let r = Math.random() * sum(w), b = 0;
+  while (r > w[b] && b < S.boards.length - 1) { r -= w[b]; b++; }
+  S.seats[si].pick = b;
+}
+
+function cpuFm(si) {
+  const p = S.seats[si], sharers = S.seats.filter(q => q.pick === p.pick).length;
+  if (sharers < 2) return null;
+  const now = evOf(INDUSTRIES[S.boards[p.pick]]) / sharers;
+  let best = null, bestEv = now + 1;
+  S.boards.forEach((ind, b) => {
+    if (S.seats.some(q => q.pick === b)) return;
+    const ev = evOf(INDUSTRIES[ind]);
+    if (ev > bestEv) { bestEv = ev; best = b; }
+  });
+  return best;
+}
+
+function cpuRoll(si) {
+  const p = S.seats[si];
+  if (!p.roll) doRoll(si);
+  const r = p.roll, d = INDUSTRIES[S.boards[p.pick]].die;
+  if (canPivot(si) && !r.rerolled && sum(r.faces.map(f => f.v)) < avg(DIE[d]) * r.faces.length) {
+    r.faces = rollFaces(si); r.rerolled = true;
+    log(`${p.name} がピボットで振り直した`);
+  }
+  if (p.hand.includes("flex") && !r.flexed) {
+    let bi = -1, bg = 3;
+    r.faces.forEach((f, i) => { const g = Math.max(...DIE[f.d]) - f.v; if (g > bg) { bg = g; bi = i; } });
+    if (bi >= 0) ACT.roll(si, p, { t: "flex", d: bi });
+  }
+  if (!p.roll.final) finalize(si);
+}
+
+// ===== 通信 =====
+function viewFor(si) {
+  const v = JSON.parse(JSON.stringify(S));
+  v.deckN = S.deck ? S.deck.length : 0; v.poolN = S.pool ? S.pool.length : 0;
+  delete v.deck; delete v.pool;
+  v.seats.forEach((p, i) => {
+    delete p.id;
+    if (i === si) return;
+    if (p.buy) p.buy.offer = p.buy.offer.map(() => null);
+    if (S.phase === "select" && p.pick !== null) p.pick = -1;
+    p.lead = false;
+    if (S.phase === "fm") p.fmTo = null;
+  });
+  return v;
+}
+
+function sync() {
+  if (!isHost) return;
+  conns.forEach((c, id) => {
+    const si = S.seats.findIndex(p => p.id === id);
+    if (si >= 0 && c.open) c.send({ t: "state", s: viewFor(si), me: si });
+  });
+  render();
+}
+
+function act(a) {
+  if (isHost) { if (ME >= 0) handle(ME, a); }
+  else if (hostConn) hostConn.send({ t: "act", a });
+}
+
+function savedName() { try { return localStorage.getItem("seeno-name") || ""; } catch (e) { return ""; } }
+function myName() {
+  const el = document.getElementById("nameIn");
+  const n = ((el && el.value) || "").trim().slice(0, 10) || "あなた";
+  try { localStorage.setItem("seeno-name", n); } catch (e) {}
+  return n;
+}
+
+function openLobby(cpus) {
+  isHost = true;
+  S = { phase: "lobby", code: "", seats: [mkSeat(myName(), "local", "host")] };
+  for (let i = 0; i < cpus; i++) addCpu();
+  sync();
+}
+function addCpu() {
+  if (S.seats.length >= MAX_SEATS) return;
+  const used = S.seats.map(p => p.name);
+  S.seats.push(mkSeat(CPU_NAMES.find(n => !used.includes(n)) || "CPU", "cpu", "cpu"));
+  sync();
+}
+function addLocal() {
+  if (S.seats.length >= MAX_SEATS) return;
+  const el = document.getElementById("localIn");
+  const n = ((el && el.value) || "").trim().slice(0, 10) || ("プレイヤー" + (S.seats.length + 1));
+  S.seats.push(mkSeat(n, "local", "local" + Date.now()));
+  sync();
+}
+function removeSeat(i) {
+  if (i === 0) return;
+  const p = S.seats[i];
+  if (p.kind === "remote") { const c = conns.get(p.id); if (c) { c.send({ t: "deny", why: "ホストに外されました" }); conns.delete(p.id); setTimeout(() => c.close(), 300); } }
+  S.seats.splice(i, 1);
+  sync();
+}
+function startGame() {
+  if (S.seats.length < 2) return;
+  newGame(); check(); sync();
+}
+function backToLobby() {
+  clearTimeout(rollTimer); rollTimer = null;
+  S = { phase: "lobby", code: S.code, seats: S.seats.map(p => mkSeat(p.name, p.kind, p.id)) };
+  ui.unlocked = -1;
+  sync();
+}
+
+function createRoom(retry = 0) {
+  const name = myName();
+  const code = String(1000 + rand(9000));
+  lobby = { step: "connecting", msg: "部屋をつくっています…" };
+  render();
+  peer = new Peer(PEER_PREFIX + code);
+  peer.on("open", () => {
+    isHost = true;
+    S = { phase: "lobby", code, seats: [mkSeat(name, "local", "host")] };
+    sync();
+  });
+  peer.on("connection", c => {
+    c.on("data", d => onHostData(c, d));
+    c.on("close", () => onLeave(c));
+  });
+  peer.on("error", e => {
+    if (e.type === "unavailable-id" && retry < 5) { peer.destroy(); createRoom(retry + 1); return; }
+    if (S && S.phase !== "lobby" && e.type === "peer-unavailable") return;
+    lobby = { step: "start", msg: "つなげませんでした（" + e.type + "）。インターネットにつながってるか確認してね。" };
+    if (!S || S.phase === "lobby") { S = null; isHost = false; render(); }
+  });
+}
+
+function onHostData(c, d) {
+  if (d.t === "join") {
+    if (S.phase !== "lobby") { c.send({ t: "deny", why: "もうゲームが始まっています" }); return; }
+    if (S.seats.length >= MAX_SEATS) { c.send({ t: "deny", why: "満員です（6人まで）" }); return; }
+    const name = String(d.name || "").trim().slice(0, 10) || "ゲスト";
+    S.seats.push(mkSeat(name, "remote", c.peer));
+    conns.set(c.peer, c);
+    lastSeen.set(c.peer, Date.now());
+    sync();
+    return;
+  }
+  lastSeen.set(c.peer, Date.now());
+  const si = S.seats.findIndex(p => p.id === c.peer);
+  if (si >= 0 && d.t === "act") handle(si, d.a);
+}
+
+// タブを閉じても close が来ないことがあるので、ping が途切れたら抜けた扱いにする
+const lastSeen = new Map();
+setInterval(() => {
+  if (isHost) conns.forEach((c, id) => { if (Date.now() - (lastSeen.get(id) || Date.now()) > 8000) onLeave(c); });
+  else if (hostConn && hostConn.open) hostConn.send({ t: "ping" });
+}, 2000);
+
+function onLeave(c) {
+  if (!conns.has(c.peer)) return;
+  conns.delete(c.peer);
+  const si = S.seats.findIndex(p => p.id === c.peer);
+  if (si < 0) return;
+  if (S.phase === "lobby") { S.seats.splice(si, 1); sync(); return; }
+  // ゲーム中に抜けた人はCPUが代わりにやる
+  const p = S.seats[si];
+  p.kind = "cpu"; p.id = "cpu"; p.name += "（CPU）";
+  log(`${p.name} に交代しました`);
+  if (S.phase === "buy" && !p.buy.done) cpuBuy(si);
+  if (S.phase === "select" && p.pick === null) cpuSelect(si);
+  if (S.phase === "fm" && p.fmWait) { p.fmWait = false; p.fmTo = cpuFm(si); }
+  if (S.phase === "end") p.ready = true;
+  check(); sync();
+}
+
+function joinRoom() {
+  const code = (document.getElementById("codeIn").value || "").replace(/\D/g, "");
+  if (code.length !== 4) { lobby.msg = "4けたの部屋コードを入れてね"; render(); return; }
+  const name = myName();
+  lobby = { step: "connecting", msg: "部屋 " + code + " につないでいます…" };
+  render();
+  peer = new Peer();
+  peer.on("open", () => {
+    hostConn = peer.connect(PEER_PREFIX + code, { reliable: true });
+    hostConn.on("open", () => hostConn.send({ t: "join", name }));
+    hostConn.on("data", d => {
+      if (d.t === "state") { V = d.s; ME = d.me; render(); }
+      if (d.t === "deny") { lobby = { step: "start", msg: d.why }; V = null; hostConn = null; peer.destroy(); render(); }
+    });
+    hostConn.on("close", () => {
+      if (!hostConn) return;
+      lobby = { step: "start", msg: "ホストとの接続が切れました。" };
+      V = null; hostConn = null; render();
+    });
+  });
+  peer.on("error", e => {
+    lobby = { step: "start", msg: e.type === "peer-unavailable" ? "部屋 " + code + " が見つかりません" : "つなげませんでした（" + e.type + "）" };
+    V = null; render();
+  });
+}
+
+// ===== 画面 =====
+const PHASE_LABEL = { buy: "① スキルカードを買う", select: "② せーので業界を選ぶ", fm: "② 先行者利益", roll: "③ ダイスを振る", end: "④ ラウンドのまとめ", over: "ゲーム終了" };
+const me = () => (ME >= 0 ? V.seats[ME] : null);
+const nameTag = i => `<span class="tag" style="--pc:${SEAT_COLORS[i]}">${esc(V.seats[i].name)}</span>`;
+const vCount = (p, k) => p.hand.filter(x => x === k).length;
+const vHandCount = p => p.hand.filter(k => k !== "staff").length;
+const vHandLimit = p => HAND_MAX + vCount(p, "staff");
+
+function chip(k, isNew) {
+  const c = CARDS[k];
+  return `<span class="chip ${c.once ? "once" : ""} ${isNew ? "new" : ""}" title="${esc(c.text)}">${esc(c.name)}</span>`;
+}
+
+// ===== モーション =====
+const seenRolls = new Set(), rollQueue = [], handSeen = {};
+const dealState = { key: null, done: new Set(), flipped: new Set() };
+
+// 山札から1人1枚ずつ、親から時計回りに3周配る
+function startDeal() {
+  if (V.phase !== "buy" || !V.gid) return;
+  const key = `${V.gid}-${V.round}`;
+  if (dealState.done.has(key) || dealState.key === key) return;
+  const deck = document.getElementById("deckC");
+  if (!deck) { dealState.done.add(key); return; }
+  dealState.key = key;
+  const from = deck.getBoundingClientRect(), fx = from.left + from.width / 2, fy = from.top + from.height / 2;
+  const order = V.seats.map((_, n) => (V.oya + n) % V.seats.length);
+  const step = 120, dur = 450;
+  let n = 0;
+  for (let lap = 0; lap < 3; lap++) order.forEach(si => {
+    setTimeout(() => {
+      const seat = document.querySelector(`[data-seat="${si}"]`);
+      if (!seat) return;
+      const to = seat.getBoundingClientRect();
+      const c = document.createElement("div");
+      c.className = "flycard";
+      c.style.left = fx - 18 + "px"; c.style.top = fy - 25 + "px";
+      document.body.appendChild(c);
+      const dx = to.left + to.width / 2 - fx + (lap - 1) * 16, dy = to.top + Math.min(to.height / 2, 50) - fy;
+      c.animate([
+        { transform: "translate(0,0) rotate(0deg)" },
+        { transform: `translate(${dx}px,${dy}px) rotate(${360 + (lap - 1) * 14}deg)` }
+      ], { duration: dur, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" }).onfinish = () =>
+        c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" }).onfinish = () => c.remove();
+    }, n++ * step);
+  });
+  setTimeout(() => { dealState.done.add(key); dealState.key = null; render(); }, n * step + dur);
+}
+let rollPlaying = null;
+
+// 新しく振られたダイスを見つけて、3Dサイコロの順番待ちに入れる
+function detectRolls() {
+  if (!["roll", "end"].includes(V.phase)) return;
+  V.seats.forEach((p, i) => {
+    const r = p.roll;
+    if (!r || !r.faces.length) return;
+    const key = `${V.gid}-${V.round}-${i}-${r.rerolled}-${r.flexed}-${r.faces.map(f => f.v).join(",")}`;
+    if (seenRolls.has(key)) return;
+    seenRolls.add(key);
+    rollQueue.push({ i, name: p.name, faces: r.faces.map(f => ({ ...f })), col: INDUSTRIES[V.boards[p.pick]].col, gain: p.res ? p.res.delta : null });
+  });
+  playRolls();
+}
+
+// 面の置き方と、その面を正面に向ける回転
+const FACE_POS = ["", "rotateY(180deg)", "rotateY(90deg)", "rotateY(-90deg)", "rotateX(90deg)", "rotateX(-90deg)"];
+const FACE_TO_FRONT = [[0, 0], [0, 180], [0, -90], [0, 90], [-90, 0], [90, 0]];
+
+function playRolls() {
+  if (rollPlaying || !rollQueue.length) return;
+  const r = rollQueue.shift(), token = {};
+  rollPlaying = token;
+  const st = document.getElementById("stage");
+  st.querySelector(".who").innerHTML = `${nameTag(r.i)} がサイコロを振った！`;
+  const sumEl = st.querySelector(".sum");
+  sumEl.classList.remove("show");
+  const box = st.querySelector(".dice3d");
+  box.innerHTML = r.faces.map(f => {
+    const c = f.d === "X" ? "#2f7dd1" : r.col;
+    return `<div class="cw"><div class="shadow"></div><div class="cube">${DIE[f.d].map((v, k) =>
+      `<div class="face ${v < 0 ? "n" : ""}" style="--c:${c};transform:${FACE_POS[k]} translateZ(32px)">${v}</div>`).join("")}</div></div>`;
+  }).join("");
+  st.classList.remove("hidden");
+  const dur = 1300;
+  box.querySelectorAll(".cw").forEach((cw, n) => {
+    const f = r.faces[n], k = DIE[f.d].indexOf(f.v);
+    const [tx, ty] = FACE_TO_FRONT[k < 0 ? 0 : k];
+    const spinX = 360 * (2 + rand(2)) * (Math.random() < .5 ? -1 : 1), spinY = 360 * (1 + rand(2));
+    const delay = n * 90;
+    cw.animate([
+      { transform: `translate(${(Math.random() - .5) * 240}px,-220px)` },
+      { transform: "translate(0,0)", offset: .45 },
+      { transform: "translate(0,-36px)", offset: .62 },
+      { transform: "translate(0,0)", offset: .78 },
+      { transform: "translate(0,-8px)", offset: .88 },
+      { transform: "translate(0,0)" }
+    ], { duration: dur, delay, easing: "ease-in", fill: "both" });
+    cw.querySelector(".cube").animate([
+      { transform: `rotateX(${rand(360)}deg) rotateY(${rand(360)}deg) rotateZ(${rand(360)}deg)` },
+      // 真正面だと平らに見えるので、少しななめで止めて立体感を出す
+      { transform: `rotateX(${tx + spinX - 16}deg) rotateY(${ty + spinY + 14}deg) rotateZ(0deg)` }
+    ], { duration: dur, delay, easing: "cubic-bezier(.15,.6,.25,1)", fill: "both" });
+  });
+  const total = sum(r.faces.map(f => f.v));
+  setTimeout(() => {
+    if (rollPlaying !== token) return;
+    sumEl.innerHTML = `出目 ${total}` + (r.gain !== null ? `　→　<span style="color:${r.gain >= 0 ? "#b8ffcb" : "#ffb3b3"}">💰${r.gain >= 0 ? "+" : ""}${r.gain}</span>` : "");
+    sumEl.classList.add("show");
+  }, dur + r.faces.length * 90);
+  setTimeout(() => { if (rollPlaying === token) skipRoll(); }, dur + r.faces.length * 90 + 1100);
+}
+
+function skipRoll() {
+  rollPlaying = null;
+  document.getElementById("stage").classList.add("hidden");
+  playRolls();
+}
+function dieHtml(f, extra = "") {
+  return `<span class="die ${f.d === "X" ? "x" : ""} ${f.v < 0 ? "n" : ""}" ${extra}>${f.v}</span>`;
+}
+function facesText(d) {
+  return DIE[d].map(v => v < 0 ? `<span class="neg">${v}</span>` : v).join(" ");
+}
+
+// ホストの画面で、いまどの席として見せるか決める
+function chooseHostSeat() {
+  const locals = S.seats.map((_, i) => i).filter(i => S.seats[i].kind === "local");
+  const inGame = !["lobby", "over"].includes(S.phase);
+  const need = inGame ? locals.filter(needsInput) : [];
+  const privatePhase = ["buy", "select", "fm"].includes(S.phase);
+  if (need.length) {
+    const si = need[0];
+    if (privatePhase && locals.length > 1 && ui.unlocked !== si) return { si: -1, gate: si };
+    return { si };
+  }
+  // 誰も入力しないときは、何人かで1台を使っているなら見るだけ
+  if (privatePhase && locals.length > 1) return { si: -1 };
+  return { si: locals[0] };
+}
+
+function render() {
+  renderMain();
+  drawZoom();
+}
+
+function renderMain() {
+  const app = document.getElementById("app");
+  const info = document.getElementById("info");
+  let gate = null;
+  if (isHost && S) {
+    const h = chooseHostSeat();
+    ME = h.si; gate = h.gate;
+    V = viewFor(ME);
+  }
+  if (!V) { info.textContent = ""; app.innerHTML = startHtml(); return; }
+  detectRolls();
+  app.classList.toggle("game", V.phase !== "lobby");
+  if (V.phase === "lobby") { info.textContent = V.code ? "部屋 " + V.code : ""; app.innerHTML = lobbyHtml(); return; }
+  // ラウンドは卓の真ん中に出すので、上のバーには部屋コードだけ
+  info.textContent = V.code ? "部屋 " + V.code : "";
+  const hasGate = gate !== undefined && gate !== null;
+  const prompt = hasGate ? `<div class="panel gate">
+      <div class="muted">ほかの人は画面を見ないでね</div>
+      <div class="who">${nameTag(gate)} さんの番</div>
+      <button class="big" onclick="ui.unlocked=${gate};ui.lead=false;ui.discardOpen=false;render()">見る</button></div>` : actionHtml();
+  const myPanel = !hasGate && V.phase === "buy" && me() ? buyHtml(me()) : "";
+  // 自分（見ている人）を卓の手前に座らせる
+  const base = ME >= 0 ? ME : hasGate ? gate : Math.max(0, V.seats.findIndex(p => p.kind === "local"));
+  // 配られたカードは自分の席のすぐ上に出す（手札は画面の下に固定しているので、席の中には入れない）
+  app.innerHTML = tableHtml(base, myPanel || prompt, "") + peekHtml() + logHtml() + helpHtml();
+  startDeal();
+}
+
+function startHtml() {
+  const busy = lobby.step === "connecting";
+  return `
+  <div class="panel">
+    <h2>名前</h2>
+    <input type="text" id="nameIn" maxlength="10" value="${esc(savedName())}" placeholder="あなたの名前">
+  </div>
+  <div class="panel">
+    <h2>あそびかた</h2>
+    <div class="row">
+      <button onclick="openLobby(3)" ${busy ? "disabled" : ""}>🤖 ひとりで（CPUと対戦）</button>
+      <button class="blue" onclick="openLobby(0)" ${busy ? "disabled" : ""}>👨‍👩‍👧 この端末でみんなで</button>
+    </div>
+    <h2>オンライン</h2>
+    <div class="row">
+      <button onclick="createRoom()" ${busy ? "disabled" : ""}>🌐 部屋をつくる</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="codeIn" inputmode="numeric" maxlength="4" placeholder="部屋コード（4けた）" style="max-width:180px">
+      <button class="blue" onclick="joinRoom()" ${busy ? "disabled" : ""}>部屋に入る</button>
+    </div>
+    <p class="${busy ? "muted" : "msg"}">${esc(lobby.msg)}</p>
+  </div>` + helpHtml(true);
+}
+
+function lobbyHtml() {
+  const kindLabel = { local: "この端末", remote: "オンライン", cpu: "CPU" };
+  const list = V.seats.map((p, i) => `
+    <div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span><span class="dot" style="--pc:${SEAT_COLORS[i]}"></span> ${esc(p.name)} <span class="muted">（${kindLabel[p.kind]}）</span></span>
+      ${isHost && i > 0 ? `<button class="sub" onclick="removeSeat(${i})">外す</button>` : ""}
+    </div>`).join("");
+  const full = V.seats.length >= MAX_SEATS;
+  return `<div class="panel">
+    ${V.code ? `<h2>部屋コード：<span style="font-size:28px;letter-spacing:4px">${V.code}</span></h2><p class="muted">友だちにこの4けたを教えてね（6人まで）</p>` : `<h2>メンバー</h2>`}
+    ${list}
+    ${isHost ? `
+      <div class="row" style="margin-top:10px">
+        <button class="sub" onclick="addCpu()" ${full ? "disabled" : ""}>＋ CPU</button>
+        <input type="text" id="localIn" maxlength="10" placeholder="この端末で遊ぶ人の名前" style="max-width:200px">
+        <button class="sub" onclick="addLocal()" ${full ? "disabled" : ""}>＋ この端末の人</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="big" onclick="startGame()" ${V.seats.length < 2 ? "disabled" : ""}>スタート（${V.seats.length}人）</button>
+      </div>
+      ${V.seats.length < 2 ? `<p class="muted">2人以上で始められるよ</p>` : ""}`
+      : `<p class="muted">ホストがスタートするのを待っています…</p>`}
+  </div>` + helpHtml(true);
+}
+
+function boardsHtml() {
+  const revealed = ["fm", "roll", "end"].includes(V.phase);
+  const pickable = V.phase === "select" && me() && me().pick === null;
+  const fmPick = V.phase === "fm" && me() && me().fmWait;
+  const mine = me() && me().pick >= 0 ? me().pick : -1;
+  // 山札を真ん中に置いて、業界カードをそのまわりに円く並べる
+  return `<div class="ring ${pickable || fmPick ? "picking" : ""}">
+    <div class="deckpile center" id="deckC">山札<br>${V.deckN}</div>
+    ${V.boards.map((ind, b) => {
+    const deg = 90 + b * 360 / V.boards.length, a = deg * Math.PI / 180, I = INDUSTRIES[ind];
+    const who = revealed ? V.seats.map((p, i) => p.pick === b ? `<span class="pdot" style="--pc:${SEAT_COLORS[i]}" title="${esc(p.name)}">${esc([...p.name.replace(/^CPU\s*/, "")][0] || "?")}${V.phase !== "fm" ? `<small>${p.dice}</small>` : ""}</span>` : "").join("") : "";
+    const click = pickable ? `onclick="act({t:'pick',b:${b},lead:ui.lead})"` : fmPick && me().pick !== b ? `onclick="act({t:'fm',b:${b}})"` : "";
+    const tap = click || `onclick="zoomInd(${b})"`;
+    return `<div data-b="${b}" class="iboard ${click ? "pickable" : ""} ${b === mine ? "mine" : ""} ${V.phase === "end" && V.round < ROUNDS && b === V.seats[V.oya].pick && V.poolN ? "swap" : ""}"
+      style="--c:${I.col};left:${50 + 36 * Math.cos(a)}%;top:${50 + 36 * Math.sin(a)}%" ${tap}>
+      <button class="zbtn ib-z" title="大きく見る" onclick="event.stopPropagation();zoomInd(${b})">🔍</button>
+      <div class="ib-em">${I.em}</div>
+      <div class="ib-nm">${esc(I.name)}</div>
+      <div class="ib-dice">${"🎲".repeat(I.n)}</div>
+      <div class="ib-ev">期待値 ${evOf(I).toFixed(1)}</div>
+      <div class="ib-faces">${facesText(I.die)}</div>
+      ${who ? `<div class="ib-who">${who}</div>` : ""}
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function statusOf(p, i) {
+  if (p.kind === "cpu" && V.phase !== "roll") return "";
+  switch (V.phase) {
+    case "buy": return p.buy.done ? "✅" : "考え中…";
+    case "select": return p.pick !== null ? "✅ 選んだ" : "考え中…";
+    case "fm": return p.fmWait ? "考え中…" : "";
+    case "roll": return V.order[V.rollPos] === i ? "🎲 振る番" : "";
+    case "end": return p.ready ? "✅" : "待ってる…";
+  }
+  return "";
+}
+
+// 新しく手に入れたカードを見つける（ポンと出すため）
+function freshFrom() {
+  return V.seats.map((p, i) => {
+    const key = `${V.gid}-${i}`, before = handSeen[key] === undefined ? p.hand.length : handSeen[key];
+    handSeen[key] = p.hand.length;
+    return before;
+  });
+}
+
+// 麻雀卓みたいに、手前が自分。左どなりから時計回りに 左 → 奥 → 右 と座る
+function tableHtml(base, prompt, myPanel) {
+  const N = V.seats.length, others = [];
+  for (let r = 1; r < N; r++) others.push((base + r) % N);
+  const narrow = window.innerWidth < 640;
+  const [nl, nt] = narrow ? [0, others.length] : ({ 1: [0, 1], 2: [0, 2], 3: [1, 1], 4: [1, 2], 5: [2, 1] })[others.length] || [0, 0];
+  const left = others.slice(0, nl).reverse(), top = others.slice(nl, nl + nt), right = others.slice(nl + nt);
+  const fresh = freshFrom();
+  const col = a => a.length ? "minmax(96px,150px)" : "0px";
+  return `<div class="felt" style="grid-template-columns:${col(left)} minmax(0,1fr) ${col(right)}">
+    <div class="tt">${top.map(i => tSeatHtml(i, fresh[i])).join("")}</div>
+    <div class="tl">${left.map(i => tSeatHtml(i, fresh[i])).join("")}</div>
+    <div class="tc">
+      <div class="banner">
+        <div class="bn-mid"><b>ラウンド ${Math.min(V.round, ROUNDS)} / ${ROUNDS}</b>　${PHASE_LABEL[V.phase] || ""}</div>
+        <div class="deckpile sm eff">効率化<br>${V.effLeft}</div>
+      </div>
+      ${boardsHtml()}
+      ${prompt}
+    </div>
+    <div class="tr">${right.map(i => tSeatHtml(i, fresh[i])).join("")}</div>
+    <div class="tm">${mySeatHtml(base, fresh[base], myPanel)}</div>
+  </div>`;
+}
+
+function resultBubble(p) {
+  const r = p.res;
+  if (!r || !["roll", "end"].includes(V.phase)) return "";
+  return `<div class="bub">${r.faces.map(f => dieHtml(f)).join("") || `<span class="muted">ダイスなし</span>`}
+    <b class="gain ${r.delta >= 0 ? "p" : "m"}">${r.delta >= 0 ? "+" : ""}${r.delta}</b></div>`;
+}
+const avatar = (p, i) => `<div class="ava" style="--pc:${SEAT_COLORS[i]}">${esc([...p.name.replace(/^CPU\s*/, "")][0] || "?")}${i === V.oya ? `<span class="oyab">親</span>` : ""}</div>`;
+const isTurn = i => V.phase === "roll" && V.order[V.rollPos] === i;
+
+// まわりの席：持っているカードは小さい扇。タップで中身を見る
+function tSeatHtml(i, freshAt) {
+  const p = V.seats[i], n = p.hand.length;
+  return `<div class="tseat ${isTurn(i) ? "turn" : ""}" style="--pc:${SEAT_COLORS[i]}" data-seat="${i}" onclick="ui.peek=${i};render()">
+    ${avatar(p, i)}
+    <div class="sinfo"><div class="snm">${esc(p.name)}</div><div class="smoney">💰${p.money}</div></div>
+    <div class="minifan">${p.hand.map((k, h) => `<span class="mini ${CARDS[k].once ? "once" : ""} ${h >= freshAt ? "new" : ""}" style="--r:${(h - (n - 1) / 2) * 9}deg"></span>`).join("")}</div>
+    <div class="sst">${statusOf(p, i) || "&nbsp;"}</div>
+    ${resultBubble(p)}
+  </div>`;
+}
+
+// 手前の席：UNOみたいに手札を扇に広げる
+function mySeatHtml(i, freshAt, myPanel) {
+  const p = V.seats[i], n = p.hand.length;
+  const cards = p.hand.map((k, h) => {
+    const off = h - (n - 1) / 2, c = CARDS[k];
+    return `<div class="hcard ${c.once ? "once" : ""} ${h >= freshAt ? "new" : ""}" style="--r:${off * 6}deg;--y:${Math.abs(off) * Math.abs(off) * 3}px" title="タップで大きく見る" ${i === ME ? `data-k="${k}"` : ""} onclick="zoomCard('${k}')">
+      <div class="hc-cost">💰${c.cost}</div><div class="hc-nm">${esc(c.name)}</div><div class="hc-tx">${esc(c.text)}</div>${c.once ? `<div class="hc-once">使い切り</div>` : k === "staff" ? `<div class="hc-once" style="color:#1f6f3f">数えない</div>` : ""}</div>`;
+  }).join("");
+  return `<div class="myseat ${isTurn(i) ? "turn" : ""}" style="--pc:${SEAT_COLORS[i]}" data-seat="${i}">
+    <div class="myhead">${avatar(p, i)}
+      <div><div class="snm">${esc(p.name)}${i === ME ? "（あなた）" : ""}</div><div class="mymoney">💰 ${p.money}</div></div>
+      <div class="sst">スキル ${vHandCount(p)}/${vHandLimit(p)}枚${p.hand.length > vHandCount(p) ? `（数えないカード ${p.hand.length - vHandCount(p)}枚）` : ""}　${statusOf(p, i)}</div>
+      ${resultBubble(p)}
+    </div>
+    ${myPanel || ""}
+    ${i === ME && p.hand.some(k => CARDS[k].once) ? `<div class="draghint">💡 紫の使い切りカードは、ドラッグして場に出すと使えるよ</div>` : ""}
+    <div class="handfan">${cards || `<div class="muted" style="color:#d9f0dd">まだスキルカードがないよ</div>`}</div>
+  </div>`;
+}
+
+// ===== 拡大 =====
+function zoomCard(k) { if (suppressClick) return; ui.zoom = { t: "card", k }; drawZoom(); }
+function zoomInd(b) { ui.zoom = { t: "ind", b }; drawZoom(); }
+function closeZoom() { ui.zoom = null; drawZoom(); }
+
+function drawZoom() {
+  const el = document.getElementById("zoom"), z = ui.zoom;
+  if (!z) { el.innerHTML = ""; return; }
+  let body = "";
+  if (z.t === "card") {
+    const c = CARDS[z.k];
+    body = `<div class="zcard ${c.once ? "once" : ""}">
+      <div class="row" style="justify-content:space-between"><span class="zc-kind">${c.once ? "使い切りカード" : "スキルカード"}</span><span class="zc-cost">💰 ${c.cost}</span></div>
+      <div class="zc-nm">${esc(c.name)}</div>
+      <div class="zc-tx">${esc(c.text)}</div>
+      <div class="zc-more">${esc(MORE[z.k] || "")}</div>
+    </div>`;
+  } else if (V && V.boards && V.boards[z.b] !== undefined) {
+    const I = INDUSTRIES[V.boards[z.b]], faces = DIE[I.die], negs = faces.filter(v => v < 0).length;
+    const who = ["fm", "roll", "end"].includes(V.phase) ? V.seats.map((p, i) => p.pick === z.b ? nameTag(i) : "").join(" ") : "";
+    body = `<div class="zind" style="--c:${I.col}">
+      <div class="zi-em">${I.em}</div>
+      <div class="zi-nm">${esc(I.name)}</div>
+      <div class="zi-row">ダイス <b>${I.n}個</b>　期待値 <b>${evOf(I).toFixed(1)}</b></div>
+      <div class="zi-faces">${faces.map(v => `<span class="die ${v < 0 ? "n" : ""}">${v}</span>`).join("")}</div>
+      <div class="zi-note">ダイス1個の面（どれかが出る）${negs ? `<br><span class="neg">マイナスの目があるハイリスク業界！</span>` : ""}</div>
+      ${who ? `<div class="zi-who">選んだ人：${who}</div>` : ""}
+    </div>
+    <p class="zhelp">かぶらなければ ${I.n}個 ぜんぶもらえる。かぶったら親に近い人から1個ずつ。</p>`;
+  } else { ui.zoom = null; el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="zoom-bg" onclick="closeZoom()"><div class="zoom-box" onclick="event.stopPropagation()">${body}
+    <button class="sub" style="margin-top:12px" onclick="closeZoom()">とじる</button></div></div>`;
+}
+
+// ===== カードをドラッグして場に出す =====
+let drag = null, suppressClick = false, toastTimer = null;
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+// 場に出したカードを使う。使えたら true
+function playCard(k, t) {
+  const p = me(), c = CARDS[k], ph = V.phase;
+  if (!p) return false;
+  if (!c.once) { toast(`「${c.name}」は持っているだけで、ずっと効くカードだよ`); return false; }
+  if (k === "hh") {
+    if (ph === "buy" && !p.buy.done) { act({ t: "hh" }); toast("ヘッドハンティング！ 山札からもう1枚引いたよ"); return true; }
+    toast("ヘッドハンティングは、カードを買うときに使えるよ");
+  } else if (k === "reskill") {
+    if (ph === "buy" && !p.buy.done) { ui.discardOpen = true; render(); toast("リスキリング！ 捨て札から買うカードを選んでね"); return true; }
+    toast("リスキリングは、カードを買うときに使えるよ");
+  } else if (k === "lead") {
+    if (ph === "select" && p.pick === null) {
+      if (t.b !== undefined) { act({ t: "pick", b: t.b, lead: true }); toast("リーダーシップ！ 親になってこの業界を選んだよ"); }
+      else { ui.lead = true; render(); toast("リーダーシップを使う！ 業界カードを選んでね"); }
+      return true;
+    }
+    toast("リーダーシップは、業界を選ぶときに使えるよ");
+  } else if (k === "first") {
+    if (ph === "fm" && p.fmWait) {
+      if (t.b !== undefined && t.b !== p.pick) { act({ t: "fm", b: t.b }); toast("先行者利益！ 業界を変えたよ"); return true; }
+      toast("変えたい業界カードの上に落としてね");
+    } else toast("先行者利益は、せーのでみんなの業界が見えたあとに使えるよ");
+  } else if (k === "flex") {
+    const r = p.roll;
+    if (ph === "roll" && V.order[V.rollPos] === ME && r && !r.final && !r.flexed) {
+      if (t.d !== undefined) { act({ t: "flex", d: t.d }); toast("臨機応変！ いちばん大きい目にしたよ"); return true; }
+      toast("変えたいダイスの上に落としてね");
+    } else toast("臨機応変は、自分がダイスを振ったあとに使えるよ");
+  }
+  return false;
+}
+
+// ゴーストを一瞬かくして、指の下にあるものを調べる
+function underPointer(x, y) {
+  if (drag && drag.ghost) drag.ghost.style.display = "none";
+  const el = document.elementFromPoint(x, y);
+  if (drag && drag.ghost) drag.ghost.style.display = "";
+  return el;
+}
+
+document.addEventListener("pointerdown", e => {
+  const card = e.target.closest(".hcard[data-k]");
+  if (!card || e.button > 0) return;
+  drag = { k: card.dataset.k, el: card, x0: e.clientX, y0: e.clientY, ghost: null, rect: card.getBoundingClientRect() };
+});
+document.addEventListener("pointermove", e => {
+  if (!drag) return;
+  if (!drag.ghost) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) return;
+    const g = drag.el.cloneNode(true);
+    g.removeAttribute("onclick"); g.removeAttribute("data-k");
+    g.classList.remove("new"); g.classList.add("dragghost");
+    g.style.width = drag.rect.width + "px"; g.style.height = drag.rect.height + "px";
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.el.classList.add("dragsrc");
+    document.body.classList.add("dragmode");
+  }
+  e.preventDefault();
+  // 画面の端までもっていったら自動でスクロール
+  if (e.clientY < 70) window.scrollBy(0, -14);
+  else if (e.clientY > window.innerHeight - 40) window.scrollBy(0, 14);
+  drag.ghost.style.left = e.clientX - drag.rect.width / 2 + "px";
+  drag.ghost.style.top = e.clientY - drag.rect.height * .6 + "px";
+  document.querySelectorAll(".drop-hover").forEach(x => x.classList.remove("drop-hover"));
+  const under = underPointer(e.clientX, e.clientY);
+  const tg = under && (under.closest("[data-die]") || under.closest("[data-b]") || under.closest(".tc"));
+  if (tg) tg.classList.add("drop-hover");
+}, { passive: false });
+document.addEventListener("pointerup", e => {
+  if (!drag) return;
+  const d = drag;
+  if (!d.ghost) { drag = null; return; }   // 動かしていなければ、ただのタップ（拡大）
+  suppressClick = true; setTimeout(() => { suppressClick = false; }, 80);
+  const under = underPointer(e.clientX, e.clientY);
+  drag = null;
+  document.body.classList.remove("dragmode");
+  document.querySelectorAll(".drop-hover").forEach(x => x.classList.remove("drop-hover"));
+  d.el.classList.remove("dragsrc");
+  const t = {};
+  if (under) {
+    const die = under.closest("[data-die]"), b = under.closest("[data-b]");
+    if (die) t.d = +die.dataset.die;
+    if (b) t.b = +b.dataset.b;
+  }
+  const onTable = under && under.closest(".felt") && !under.closest(".tm");
+  const ok = onTable && playCard(d.k, t);
+  const g = d.ghost;
+  if (ok) {
+    // 場に出してパッと消える
+    g.animate([{ transform: "scale(1.1)", opacity: 1 }, { transform: "scale(1.6) rotate(8deg)", opacity: 0 }], { duration: 400, easing: "ease-out", fill: "forwards" }).onfinish = () => g.remove();
+  } else {
+    // 手札にもどる
+    const r = g.getBoundingClientRect();
+    g.animate([{ translate: "0 0" }, { translate: `${d.rect.left - r.left}px ${d.rect.top - r.top}px` }], { duration: 300, easing: "ease-in", fill: "forwards" }).onfinish = () => g.remove();
+  }
+});
+document.addEventListener("pointercancel", () => {
+  if (!drag) return;
+  if (drag.ghost) drag.ghost.remove();
+  drag.el.classList.remove("dragsrc");
+  document.body.classList.remove("dragmode");
+  drag = null;
+});
+
+// ほかの人のカードを下から出して見せる
+function peekHtml() {
+  if (ui.peek < 0 || !V.seats[ui.peek]) return "";
+  const p = V.seats[ui.peek];
+  return `<div class="sheet-bg" onclick="ui.peek=-1;render()"><div class="sheet" onclick="event.stopPropagation()">
+    <div class="row" style="justify-content:space-between"><b>${nameTag(ui.peek)} のスキルカード（${vHandCount(p)}/${vHandLimit(p)}枚）</b><button class="sub" onclick="ui.peek=-1;render()">とじる</button></div>
+    <div class="cards" style="margin-top:8px">${p.hand.map(k => cardHtml(k)).join("") || `<span class="muted">まだ持ってないよ</span>`}</div>
+  </div></div>`;
+}
+
+function logHtml() {
+  return `<details class="panel"><summary>📝 できごと</summary><div class="log">${V.log.slice().reverse().map(esc).join("<br>")}</div></details>`;
+}
+
+function cardHtml(k, btn, cls = "") {
+  const c = CARDS[k];
+  return `<div class="card ${c.once ? "once" : ""} ${cls}">
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="nm">${esc(c.name)}</span><span class="row" style="gap:4px;flex-wrap:nowrap"><span class="cost">💰${c.cost}</span><button class="zbtn" title="大きく見る" onclick="event.stopPropagation();zoomCard('${k}')">🔍</button></span></div>
+    <div class="tx">${c.once ? `<span class="chip once">使い切り</span> ` : ""}${esc(c.text)}</div>
+    ${btn || ""}
+  </div>`;
+}
+
+function actionHtml() {
+  const p = me();
+  if (V.phase === "over") return overHtml();
+  if (V.phase === "roll" || V.phase === "end") return rollHtml();
+  if (!p) return `<div class="panel">みんなが選ぶのを待っています…</div>`;
+  if (V.phase === "buy") return buyHtml(p);
+  if (V.phase === "select") {
+    if (p.pick !== null) return `<div class="panel">「${esc(indOf(p.pick).name)}」を選んだよ。みんなを待っています…</div>`;
+    return `<div class="panel"><h2>どの業界にする？</h2>
+      <p>山札のまわりの業界カードをタップして選んでね。かぶらなければダイスをひとりじめ！</p>
+      ${p.hand.includes("lead") ? `<label><input type="checkbox" ${ui.lead ? "checked" : ""} onchange="ui.lead=this.checked"> リーダーシップを使って親になる</label>` : ""}
+    </div>`;
+  }
+  if (V.phase === "fm") {
+    if (!p.fmWait) return `<div class="panel">先行者利益を持っている人が考えています…</div>`;
+    return `<div class="panel"><h2>先行者利益を使う？</h2>
+      <p>いまは「${esc(indOf(p.pick).name)}」。変えたい業界カードをタップするか、使わないを押してね。</p>
+      <button class="sub" onclick="act({t:'fm',b:-1})">使わない</button></div>`;
+  }
+  return "";
+}
+
+function buyHtml(p) {
+  const b = p.buy;
+  if (b.done) return `<div class="panel">買い物おわり。みんなを待っています…</div>`;
+  const over = vHandCount(p) > vHandLimit(p);
+  // 配り終わるまでは待つ。配り終わった直後の1回だけ表にめくる
+  const dealKey = `${V.gid}-${V.round}`;
+  if (!dealState.done.has(dealKey)) return `<div class="panel buyp"><b>🃏 山札からカードを配っています…</b></div>`;
+  const flipKey = dealKey + "-" + ME, dealNow = !dealState.flipped.has(flipKey);
+  dealState.flipped.add(flipKey);
+  const offers = b.offer.map((k, i) => cardHtml(k,
+    `<button onclick="act({t:'buy',i:${i}})" ${p.money < CARDS[k].cost ? "disabled" : ""}>買う</button>`,
+    dealNow ? `flip" style="animation-delay:${i * .15}s` : "")).join("");
+  const eff = cardHtml("eff",
+    `<button class="blue" onclick="act({t:'eff'})" ${b.eff || p.money < EFF_COST || V.effLeft <= 0 ? "disabled" : ""}>${b.eff ? "買ったよ" : `買う（のこり${V.effLeft}枚）`}</button>`);
+  const tools = [];
+  if (p.hand.includes("hh")) tools.push(`<button class="purple" onclick="act({t:'hh'})">ヘッドハンティングを使う（もう1枚引く）</button>`);
+  if (p.hand.includes("reskill")) tools.push(`<button class="purple" onclick="ui.discardOpen=!ui.discardOpen;render()">リスキリング：捨て札を見る（${V.discard.length}枚）</button>`);
+  const discard = ui.discardOpen && p.hand.includes("reskill")
+    ? `<h2>捨て札から買う</h2><div class="cards">${V.discard.map((k, d) => cardHtml(k,
+        `<button class="purple" onclick="ui.discardOpen=false;act({t:'reskill',d:${d}})" ${p.money < CARDS[k].cost ? "disabled" : ""}>これを買う</button>`)).join("") || `<span class="muted">捨て札はまだないよ</span>`}</div>`
+    : "";
+  const drop = over ? `<div class="panel" style="border-color:var(--bad)"><b class="msg">スキルカードは${vHandLimit(p)}枚まで！ 1枚捨ててね</b>
+      <div class="row" style="margin-top:6px">${p.hand.map((k, h) => k === "staff" ? "" :
+        `<button class="sub" onclick="act({t:'drop',h:${h}})">「${esc(CARDS[k].name)}」を捨てる</button>`).join("")}</div></div>` : "";
+  return `<div class="panel buyp">
+    <div class="row" style="justify-content:space-between"><b>配られたカード（お金が足りれば全部買える）</b><span class="muted">💰${p.money}</span></div>
+    <div class="cards" style="margin-top:6px">${offers}${eff}</div>
+    ${tools.length ? `<div class="row" style="margin-top:8px">${tools.join("")}</div>` : ""}
+    ${discard}${drop}
+    <div class="row" style="margin-top:8px"><button onclick="act({t:'done'})" ${over ? "disabled" : ""}>${b.bought ? "決定" : "買わない"}</button></div>
+  </div>`;
+}
+
+function rollHtml() {
+  const p = me();
+  let top = "";
+  if (V.phase === "roll") {
+    const cur = V.order[V.rollPos], cp = V.seats[cur];
+    if (cur === ME && !cp.roll) {
+      top = `<div class="panel"><h2>あなたの番！</h2><p>「${esc(indOf(p.pick).name)}」のダイス ${p.dice}個${vCount(p, "expand") ? ` ＋ 拡張ダイス${vCount(p, "expand")}個` : ""}</p>
+        <button class="big" onclick="act({t:'roll'})">🎲 振る</button></div>`;
+    } else if (cur === ME && cp.roll && !cp.roll.final) {
+      const r = cp.roll;
+      const pivotOk = cp.hand.includes("pivot") && !r.rerolled && cp.dice > 0 && V.seats.filter(q => q.pick === cp.pick).length >= 3;
+      const flexOk = cp.hand.includes("flex") && !r.flexed;
+      top = `<div class="panel"><h2>出た目</h2>
+        <div class="dice">${r.faces.map((f, d) => flexOk ? `<button class="die ${f.v < 0 ? "n" : ""}" data-die="${d}" title="臨機応変でいちばん大きい目にする" onclick="act({t:'flex',d:${d}})">${f.v}</button>` : dieHtml(f, `data-die="${d}"`)).join("")}</div>
+        ${flexOk ? `<p class="muted">臨機応変：変えたいダイスをタップすると、いちばん大きい目になるよ</p>` : ""}
+        <div class="row" style="margin-top:8px">
+          ${pivotOk ? `<button class="blue" onclick="act({t:'reroll'})">ピボットで振り直す</button>` : ""}
+          <button class="big" onclick="act({t:'ok'})">これで決定</button>
+        </div></div>`;
+    } else {
+      top = `<div class="panel">${nameTag(cur)} が振っています…</div>`;
+    }
+  } else {
+    const ready = p && p.ready;
+    const swap = V.round < ROUNDS && V.poolN ? `<p>親の ${nameTag(V.oya)} が選んだ「${esc(indOf(V.seats[V.oya].pick).name)}」が新しい業界に入れかわり、親が ${nameTag((V.oya + 1) % V.seats.length)} に移ります。</p>` : "";
+    top = `<div class="panel"><h2>ラウンド ${V.round} おわり</h2>${V.round >= ROUNDS ? "<p>これが最後のラウンド！</p>" : swap}
+      ${p ? `<button class="big" onclick="act({t:'ready'})" ${ready ? "disabled" : ""}>${ready ? "待ってる…" : V.round >= ROUNDS ? "結果を見る" : "次のラウンドへ"}</button>` : ""}</div>`;
+  }
+  const rows = V.order.map(i => {
+    const q = V.seats[i], r = q.res;
+    const faces = r ? r.faces : q.roll ? q.roll.faces : null;
+    return `<tr><td>${nameTag(i)}${i === V.oya ? ` <span class="oya">親</span>` : ""}</td>
+      <td>${esc(indOf(q.pick).name)} 🎲${q.dice}</td>
+      <td><div class="dice">${faces ? (faces.length ? faces.map(f => dieHtml(f)).join("") : `<span class="muted">なし</span>`) : ""}</div></td>
+      <td>${r ? `<span class="gain ${r.delta >= 0 ? "p" : "m"}">${r.delta >= 0 ? "+" : ""}${r.delta}</span><div class="muted">${r.lines.map(esc).join("<br>")}</div>` : ""}</td></tr>`;
+  }).join("");
+  return top + (V.phase === "end" ? `<div class="panel"><table><tr><th>順番</th><th>業界</th><th>出目</th><th>お金</th></tr>${rows}</table></div>` : "");
+}
+
+function overHtml() {
+  const costOf = p => sum(p.hand.map(k => CARDS[k].cost));
+  const ranked = V.seats.map((p, i) => ({ p, i, c: costOf(p) })).sort((a, b) => b.p.money - a.p.money || b.c - a.c);
+  let place = 0;
+  const rows = ranked.map((r, n) => {
+    if (n === 0 || r.p.money !== ranked[n - 1].p.money || r.c !== ranked[n - 1].c) place = n + 1;
+    return `<tr class="${place === 1 ? "rank1" : ""}"><td>${place === 1 ? "👑" : place + "位"}</td><td>${nameTag(r.i)}</td><td>💰${r.p.money}</td><td class="muted">カード合計 ${r.c}</td></tr>`;
+  }).join("");
+  return `<div class="panel"><h2>🏆 結果</h2><table>${rows}</table>
+    <p class="muted">同じお金なら、持っているスキルカードのコストが多い人が上。それも同じなら引き分け。</p>
+    ${isHost ? `<button class="big" onclick="backToLobby()">もう一度あそぶ</button>` : `<p class="muted">ホストがもう一度を押すのを待っています</p>`}</div>`;
+}
+
+function helpHtml(open) {
+  return `<details class="panel" ${open ? "" : ""}><summary>📖 ルールとカード一覧</summary>
+    <ol>
+      <li><b>スキルカードを買う</b>：引いた3枚はお金が足りれば全部買える。「効率化」も1ラウンド1枚まで${EFF_COST}で買える。持てるのは${HAND_MAX}枚まで（使い切りカードも数える。人員増強は数えない）。</li>
+      <li><b>せーので業界を選ぶ</b>：業界カードは参加人数と同じ枚数。かぶらなければその業界のダイスを全部もらえる。かぶったら親に近い人から1個ずつ。</li>
+      <li><b>ダイスを振る</b>：出目の合計＋カードの効果がもらえるお金。マイナスなら払う（0より下にはならない）。</li>
+      <li><b>業界の入れかえ</b>：親が選んだ業界が新しい業界に入れかわって、親が次の人へ。</li>
+    </ol>
+    <p>${ROUNDS}ラウンドでお金が一番多い人の勝ち！ スタートは💰${START_MONEY}。</p>
+    <div class="cards">${Object.keys(CARDS).map(k => cardHtml(k)).join("")}</div>
+  </details>`;
+}
+
+// 画面がせまいときは全画面にして遊べる
+function toggleFs() {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  } catch (e) {}
+}
+let resizeTimer = null;
+window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (V && V.phase !== "lobby") render(); }, 150); });
+render();
+</script>
+</body>
+</html>
