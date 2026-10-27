@@ -249,6 +249,31 @@ body.dragmode .tc { border-color:#ffd34d; background:rgba(255,211,77,.12); }
   z-index:45; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; max-width:min(90vw,460px); text-align:center; }
 #toast.show { opacity:1; transform:translate(-50%,0); }
 
+/* 企業カードと期間限定の業界 */
+.card.company, .zcard.company { border-color:#f59e0b; background:#fff7ed; }
+.hcard.company { border-color:#f97316; background:#fff7ed; }
+.mini.company { background:#f97316; }
+.chip.company { background:#ffedd5; border-color:#fdba74; color:#9a3412; }
+.zcard.company .zc-tx { background:#ffedd5; }
+.iboard.temp { border-style:dashed; animation:tempin .6s cubic-bezier(.3,1.5,.5,1) both; }
+.ib-temp { position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:#f97316; color:#fff; font-size:9px; font-weight:bold; padding:1px 5px; border-radius:6px; white-space:nowrap; }
+@keyframes tempin { from { transform:translate(-50%,-50%) scale(0) rotate(-90deg); } to { transform:translate(-50%,-50%); } }
+.econ-next { font-size:11px; color:#ffe9a3; }
+
+/* 景気イベント */
+.econ-bg { position:fixed; inset:0; z-index:28; display:flex; align-items:center; justify-content:center; padding:16px; animation:fadein .3s; }
+.econ-bg.boom { background:radial-gradient(circle, rgba(255,214,90,.75), rgba(120,60,0,.75)); }
+.econ-bg.bust { background:radial-gradient(circle, rgba(70,80,110,.8), rgba(10,10,25,.9)); }
+@keyframes fadein { from { opacity:0; } to { opacity:1; } }
+.econ-box { background:#fff; border-radius:22px; padding:20px; width:min(420px,100%); max-height:90vh; overflow:auto; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,.4); animation:zoomin .45s cubic-bezier(.3,1.5,.5,1); }
+.econ-icon { font-size:64px; line-height:1; animation:bounce 1s ease-in-out infinite alternate; }
+@keyframes bounce { from { transform:translateY(0); } to { transform:translateY(-10px); } }
+.econ-title { font-size:34px; font-weight:900; margin:6px 0; }
+.boom .econ-title { color:#d97706; } .bust .econ-title { color:#334155; }
+.econ-sub { color:var(--sub); font-size:14px; }
+.econ-box ul { text-align:left; font-size:14px; padding-left:20px; }
+.econ-box li { margin:4px 0; }
+
 /* カードを配るモーション */
 .dealrow { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
 .deckpile { width:58px; height:80px; border-radius:9px; flex:none; background:repeating-linear-gradient(45deg,#2b2b2b 0 6px,#3d3d3d 6px 12px); border:3px solid #fff;
@@ -290,12 +315,13 @@ body.dragmode .tc { border-color:#ffd34d; background:rgba(255,211,77,.12); }
 <main id="app"></main>
 <div id="zoom"></div>
 <div id="toast"></div>
+<div id="econ"></div>
 <div id="stage" class="hidden" onclick="skipRoll()">
   <div class="tray"><div class="who"></div><div class="dice3d"></div><div class="sum"></div><div class="skip">タップでとばす</div></div>
 </div>
 
 <script>
-const ROUNDS = 12, MAX_SEATS = 6, START_MONEY = 10, HAND_MAX = 5, EFF_COUNT = 10, EFF_COST = 3;
+const ROUNDS = 12, ECON_EVERY = 3, MAX_SEATS = 6, START_MONEY = 10, HAND_MAX = 5, EFF_COUNT = 10, EFF_COST = 3;
 const PEER_PREFIX = "seeno-kigyo-room-";
 const SEAT_COLORS = ["#2f7dd1", "#e8743b", "#1f9d55", "#c2417a", "#8a4fd1", "#b08a12"];
 const CPU_NAMES = ["CPU たろう", "CPU はなこ", "CPU じろう", "CPU さくら", "CPU けんた"];
@@ -330,7 +356,10 @@ const INDUSTRIES = [
   { name: "パン屋", em: "🥐", die: "K", n: 4, col: "#c08a3e" },
   { name: "キャンプ場", em: "⛺", die: "H", n: 3, col: "#3f7d3a" },
   { name: "水族館", em: "🐠", die: "S", n: 2, col: "#0284c7" },
-  { name: "ドローン配達", em: "🛸", die: "R", n: 2, col: "#64748b" }
+  { name: "ドローン配達", em: "🛸", die: "R", n: 2, col: "#64748b" },
+  { name: "ユニコーン", em: "🦄", die: "I", n: 2, col: "#db2777", temp: true },
+  { name: "老舗旅館", em: "🏯", die: "K", n: 5, col: "#92400e", temp: true },
+  { name: "ベンチャー", em: "💡", die: "H", n: 4, col: "#ea580c", temp: true }
 ];
 // v = CPUが考える「1ラウンドあたりの値うち」（使い切りは1回分）
 const CARDS = {
@@ -357,7 +386,11 @@ const CARDS = {
   first:   { name: "先行者利益", cost: 4, once: true, text: "「せーの」のあと 業界を変えられる", copies: 3, v: 5 },
   flex:    { name: "臨機応変", cost: 7, once: true, text: "振ったあと ダイス1個をいちばん大きい目にする", copies: 3, v: 8 },
   lead:    { name: "リーダーシップ", cost: 7, once: true, text: "「せーの」で使うと すぐ親になる", copies: 2, v: 0 },
-  reskill: { name: "リスキリング", cost: 7, once: true, text: "捨て札から1枚選んで買える", copies: 2, v: 0 }
+  reskill: { name: "リスキリング", cost: 7, once: true, text: "捨て札から1枚選んで買える", copies: 2, v: 0 },
+  // 企業カード：場に出すと、そのラウンドだけの業界がふえる
+  co_uni:  { name: "ユニコーン企業", cost: 6, once: true, company: "ユニコーン", text: "場に出すと このラウンドだけ「🦄ユニコーン」の業界がふえる", copies: 2, v: 4 },
+  co_old:  { name: "老舗企業", cost: 5, once: true, company: "老舗旅館", text: "場に出すと このラウンドだけ「🏯老舗旅館」の業界がふえる", copies: 2, v: 4 },
+  co_ven:  { name: "ベンチャー企業", cost: 6, once: true, company: "ベンチャー", text: "場に出すと このラウンドだけ「💡ベンチャー」の業界がふえる", copies: 2, v: 4 }
 };
 
 // 拡大したときに出す、くわしい説明
@@ -385,7 +418,10 @@ const MORE = {
   first: "使い切り。せーのでみんなの業界が見えたあとに、ほかの業界へ変えられる。",
   flex: "使い切り。振ったあと、ダイス1個をタップすると、その業界のダイスでいちばん大きい目になる。",
   lead: "使い切り。業界を選ぶときにチェックすると、すぐ親になれる。親はかぶったときにダイスを先にもらえる。",
-  reskill: "使い切り。捨て札の中から好きなカードを1枚選んで、そのカードの値段で買える。"
+  reskill: "使い切り。捨て札の中から好きなカードを1枚選んで、そのカードの値段で買える。",
+  co_uni: "企業カード。カードを買うときに場へドラッグすると、このラウンドだけ「🦄ユニコーン」（一発勝負のダイス2個）が業界にふえる。誰でも選べる。",
+  co_old: "企業カード。カードを買うときに場へドラッグすると、このラウンドだけ「🏯老舗旅館」（堅実なダイス5個）が業界にふえる。誰でも選べる。",
+  co_ven: "企業カード。カードを買うときに場へドラッグすると、このラウンドだけ「💡ベンチャー」（波のあるダイス4個）が業界にふえる。誰でも選べる。"
 };
 
 // ホストだけが持つ本当の状態
@@ -405,6 +441,7 @@ const avg = a => sum(a) / a.length;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 const indOf = b => INDUSTRIES[(V || S).boards[b]];
+const indByName = n => INDUSTRIES.findIndex(I => I.name === n);
 const evOf = ind => avg(DIE[ind.die]) * ind.n;
 
 // ===== ルール（ホストで動く） =====
@@ -427,7 +464,7 @@ function consume(si, k) {
 }
 
 function newGame() {
-  const pool = shuffle(INDUSTRIES.map((_, i) => i));
+  const pool = shuffle(INDUSTRIES.map((_, i) => i).filter(i => !INDUSTRIES[i].temp));
   Object.assign(S, {
     phase: "buy", round: 1, oya: rand(S.seats.length), log: [], gid: Date.now(),
     deck: shuffle(Object.entries(CARDS).flatMap(([k, c]) => Array(c.copies).fill(k))),
@@ -471,6 +508,11 @@ const ACT = {
       S.discard.splice(a.d, 1); consume(si, "reskill");
       p.money -= CARDS[k].cost; p.hand.push(k);
       log(`${p.name} がリスキリングで「${CARDS[k].name}」を買った`);
+    } else if (a.t === "company") {
+      const c = CARDS[a.k], ind = c && c.company ? indByName(c.company) : -1;
+      if (ind < 0 || S.boards.includes(ind) || !consume(si, a.k)) return;
+      S.boards.push(ind);
+      log(`${p.name} が「${c.name}」で、このラウンドだけの業界「${INDUSTRIES[ind].name}」を出した`);
     } else if (a.t === "drop") {
       const k = p.hand[a.h];
       if (!k) return;
@@ -667,16 +709,50 @@ function finalize(si) {
 
 function endRound() {
   if (S.round >= ROUNDS) { S.phase = "over"; log("ゲーム終了！"); return; }
-  // 入れかわるのは、親が選んだ業界
-  const b = S.seats[S.oya].pick;
-  if (S.pool.length) {
+  // 入れかわるのは、親が選んだ業界（期間限定の業界を選んでいたら、入れかえはなし）
+  const N = S.seats.length, b = S.seats[S.oya].pick;
+  S.boards = S.boards.slice(0, N);
+  if (b < N && S.pool.length) {
     const old = S.boards[b];
     S.boards[b] = S.pool.shift();
     log(`「${INDUSTRIES[old].name}」が「${INDUSTRIES[S.boards[b]].name}」に入れかわった`);
   }
   S.oya = (S.oya + 1) % S.seats.length;
   S.round++;
+  if ((S.round - 1) % ECON_EVERY === 0) economyEvent();
   startRound();
+}
+
+// 景気イベント：3ラウンドごとに、不況か好況がランダムで起きる
+function economyEvent() {
+  const boom = Math.random() < .5, N = S.seats.length, lines = [];
+  if (boom) {
+    // 好況：全員に同じだけお金＋スキルカードをランダムに1枚
+    S.seats.forEach(p => {
+      const k = draw();
+      p.money += 10;
+      if (k) p.hand.push(k);
+      lines.push(`${p.name}：💰+10${k ? `、「${CARDS[k].name}」をもらった` : ""}`);
+    });
+  } else {
+    // 不況：お金が多い人ほどたくさん取られる（1位30%・2位20%・3位10%）
+    const rates = [.3, .2, .1], sorted = [...S.seats].sort((a, b) => b.money - a.money), was = sorted.map(p => p.money);
+    let rank = 0;
+    sorted.forEach((p, n) => {
+      // 同じ金額の人は同じ順位（取られる前の金額でくらべる）
+      if (n > 0 && was[n] !== was[n - 1]) rank = n;
+      const r = rates[rank] || 0, lose = Math.floor(p.money * r);
+      p.money -= lose;
+      lines.push(`${p.name}：${lose ? `💰-${lose}（${Math.round(r * 100)}%）` : "取られなかった"}`);
+    });
+    // 全員のスキルカードを集めてシャッフルし、親から1枚ずつ配り直す
+    const all = shuffle(S.seats.flatMap(p => p.hand)), ord = orderFrom(S.oya);
+    S.seats.forEach(p => { p.hand = []; });
+    all.forEach((k, n) => S.seats[ord[n % N]].hand.push(k));
+    lines.push(`みんなのスキルカード${all.length}枚をシャッフルして、親の${S.seats[S.oya].name}から1枚ずつ配り直した`);
+  }
+  S.event = { id: Date.now(), type: boom ? "boom" : "bust", round: S.round, lines };
+  log((boom ? "📈 好況！ " : "📉 不況！ ") + lines.join(" / "));
 }
 
 // ===== CPU =====
@@ -700,13 +776,14 @@ function cpuBuy(si) {
       if (s > bestScore) { bestScore = s; best = { t: "buy", i }; }
     });
     if (!b.eff && S.effLeft > 0 && p.money >= EFF_COST && score("eff") > bestScore) best = { t: "eff" };
-    if (!best) break;
-    ACT.buy(si, p, best);
+    if (best) ACT.buy(si, p, best);
+    p.hand.filter(k => CARDS[k].company).forEach(k => ACT.buy(si, p, { t: "company", k }));
     while (handCount(p) > handLimit(p)) {
       let lo = -1, lv = Infinity;
       p.hand.forEach((k, h) => { if (k !== "staff" && perRound(k) < lv) { lv = perRound(k); lo = h; } });
       ACT.buy(si, p, { t: "drop", h: lo });
     }
+    if (!best) break;
   }
   b.done = true;
 }
@@ -919,6 +996,7 @@ const vCount = (p, k) => p.hand.filter(x => x === k).length;
 const vHandCount = p => p.hand.filter(k => k !== "staff").length;
 const vHandLimit = p => HAND_MAX + vCount(p, "staff");
 
+const cardCls = k => CARDS[k].company ? "once company" : CARDS[k].once ? "once" : "";
 function chip(k, isNew) {
   const c = CARDS[k];
   return `<span class="chip ${c.once ? "once" : ""} ${isNew ? "new" : ""}" title="${esc(c.text)}">${esc(c.name)}</span>`;
@@ -932,7 +1010,7 @@ const dealState = { key: null, done: new Set(), flipped: new Set() };
 function startDeal() {
   if (V.phase !== "buy" || !V.gid) return;
   const key = `${V.gid}-${V.round}`;
-  if (dealState.done.has(key) || dealState.key === key) return;
+  if (dealState.done.has(key) || dealState.key === key || document.querySelector(".econ-bg")) return;
   const deck = document.getElementById("deckC");
   if (!deck) { dealState.done.add(key); return; }
   dealState.key = key;
@@ -962,6 +1040,25 @@ function startDeal() {
 let rollPlaying = null;
 
 // 新しく振られたダイスを見つけて、3Dサイコロの順番待ちに入れる
+const seenEvents = new Set();
+function detectEvent() {
+  const e = V.event;
+  if (!e || seenEvents.has(e.id) || V.round !== e.round || V.phase !== "buy") { if (e) seenEvents.add(e.id); return; }
+  seenEvents.add(e.id);
+  const boom = e.type === "boom";
+  document.getElementById("econ").innerHTML = `<div class="econ-bg ${boom ? "boom" : "bust"}" onclick="closeEcon()">
+    <div class="econ-box" onclick="event.stopPropagation()">
+      <div class="econ-icon">${boom ? "📈" : "📉"}</div>
+      <div class="econ-title">${boom ? "好況！" : "不況！"}</div>
+      <div class="econ-sub">${boom ? "景気がよくなった！ みんなにお金とカードが配られる" : "景気がわるくなった… お金持ちほど取られて、カードがシャッフルされる"}</div>
+      <ul>${e.lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
+      <button class="big" onclick="closeEcon()">OK</button>
+    </div></div>`;
+}
+
+// イベント画面を閉じたら、カードを配りはじめる
+function closeEcon() { document.getElementById("econ").innerHTML = ""; render(); }
+
 function detectRolls() {
   if (!["roll", "end"].includes(V.phase)) return;
   V.seats.forEach((p, i) => {
@@ -1067,6 +1164,7 @@ function renderMain() {
   }
   if (!V) { info.textContent = ""; app.innerHTML = startHtml(); return; }
   detectRolls();
+  detectEvent();
   app.classList.toggle("game", V.phase !== "lobby");
   if (V.phase === "lobby") { info.textContent = V.code ? "部屋 " + V.code : ""; app.innerHTML = lobbyHtml(); return; }
   // ラウンドは卓の真ん中に出すので、上のバーには部屋コードだけ
@@ -1147,9 +1245,10 @@ function boardsHtml() {
     const who = revealed ? V.seats.map((p, i) => p.pick === b ? `<span class="pdot" style="--pc:${SEAT_COLORS[i]}" title="${esc(p.name)}">${esc([...p.name.replace(/^CPU\s*/, "")][0] || "?")}${V.phase !== "fm" ? `<small>${p.dice}</small>` : ""}</span>` : "").join("") : "";
     const click = pickable ? `onclick="act({t:'pick',b:${b},lead:ui.lead})"` : fmPick && me().pick !== b ? `onclick="act({t:'fm',b:${b}})"` : "";
     const tap = click || `onclick="zoomInd(${b})"`;
-    return `<div data-b="${b}" class="iboard ${click ? "pickable" : ""} ${b === mine ? "mine" : ""} ${V.phase === "end" && V.round < ROUNDS && b === V.seats[V.oya].pick && V.poolN ? "swap" : ""}"
+    return `<div data-b="${b}" class="iboard ${I.temp ? "temp" : ""} ${click ? "pickable" : ""} ${b === mine ? "mine" : ""} ${V.phase === "end" && V.round < ROUNDS && b === V.seats[V.oya].pick && b < V.seats.length && V.poolN ? "swap" : ""}"
       style="--c:${I.col};left:${50 + 36 * Math.cos(a)}%;top:${50 + 36 * Math.sin(a)}%" ${tap}>
       <button class="zbtn ib-z" title="大きく見る" onclick="event.stopPropagation();zoomInd(${b})">🔍</button>
+      ${I.temp ? `<div class="ib-temp">期間限定</div>` : ""}
       <div class="ib-em">${I.em}</div>
       <div class="ib-nm">${esc(I.name)}</div>
       <div class="ib-dice">${"🎲".repeat(I.n)}</div>
@@ -1195,7 +1294,7 @@ function tableHtml(base, prompt, myPanel) {
     <div class="tl">${left.map(i => tSeatHtml(i, fresh[i])).join("")}</div>
     <div class="tc">
       <div class="banner">
-        <div class="bn-mid"><b>ラウンド ${Math.min(V.round, ROUNDS)} / ${ROUNDS}</b>　${PHASE_LABEL[V.phase] || ""}</div>
+        <div class="bn-mid"><b>ラウンド ${Math.min(V.round, ROUNDS)} / ${ROUNDS}</b>　${PHASE_LABEL[V.phase] || ""}${nextEconText()}</div>
         <div class="deckpile sm eff">効率化<br>${V.effLeft}</div>
       </div>
       ${boardsHtml()}
@@ -1214,6 +1313,10 @@ function resultBubble(p) {
 }
 const avatar = (p, i) => `<div class="ava" style="--pc:${SEAT_COLORS[i]}">${esc([...p.name.replace(/^CPU\s*/, "")][0] || "?")}${i === V.oya ? `<span class="oyab">親</span>` : ""}</div>`;
 const isTurn = i => V.phase === "roll" && V.order[V.rollPos] === i;
+function nextEconText() {
+  const next = Math.ceil(V.round / ECON_EVERY) * ECON_EVERY + 1;
+  return next <= ROUNDS ? `<br><span class="econ-next">📊 次の景気イベント：ラウンド${next}のはじめ</span>` : "";
+}
 
 // まわりの席：持っているカードは小さい扇。タップで中身を見る
 function tSeatHtml(i, freshAt) {
@@ -1221,7 +1324,7 @@ function tSeatHtml(i, freshAt) {
   return `<div class="tseat ${isTurn(i) ? "turn" : ""}" style="--pc:${SEAT_COLORS[i]}" data-seat="${i}" onclick="ui.peek=${i};render()">
     ${avatar(p, i)}
     <div class="sinfo"><div class="snm">${esc(p.name)}</div><div class="smoney">💰${p.money}</div></div>
-    <div class="minifan">${p.hand.map((k, h) => `<span class="mini ${CARDS[k].once ? "once" : ""} ${h >= freshAt ? "new" : ""}" style="--r:${(h - (n - 1) / 2) * 9}deg"></span>`).join("")}</div>
+    <div class="minifan">${p.hand.map((k, h) => `<span class="mini ${cardCls(k)} ${h >= freshAt ? "new" : ""}" style="--r:${(h - (n - 1) / 2) * 9}deg"></span>`).join("")}</div>
     <div class="sst">${statusOf(p, i) || "&nbsp;"}</div>
     ${resultBubble(p)}
   </div>`;
@@ -1232,8 +1335,8 @@ function mySeatHtml(i, freshAt, myPanel) {
   const p = V.seats[i], n = p.hand.length;
   const cards = p.hand.map((k, h) => {
     const off = h - (n - 1) / 2, c = CARDS[k];
-    return `<div class="hcard ${c.once ? "once" : ""} ${h >= freshAt ? "new" : ""}" style="--r:${off * 6}deg;--y:${Math.abs(off) * Math.abs(off) * 3}px" title="タップで大きく見る" ${i === ME ? `data-k="${k}"` : ""} onclick="zoomCard('${k}')">
-      <div class="hc-cost">💰${c.cost}</div><div class="hc-nm">${esc(c.name)}</div><div class="hc-tx">${esc(c.text)}</div>${c.once ? `<div class="hc-once">使い切り</div>` : k === "staff" ? `<div class="hc-once" style="color:#1f6f3f">数えない</div>` : ""}</div>`;
+    return `<div class="hcard ${cardCls(k)} ${h >= freshAt ? "new" : ""}" style="--r:${off * 6}deg;--y:${Math.abs(off) * Math.abs(off) * 3}px" title="タップで大きく見る" ${i === ME ? `data-k="${k}"` : ""} onclick="zoomCard('${k}')">
+      <div class="hc-cost">💰${c.cost}</div><div class="hc-nm">${esc(c.name)}</div><div class="hc-tx">${esc(c.text)}</div>${c.company ? `<div class="hc-once" style="color:#c2410c">企業</div>` : c.once ? `<div class="hc-once">使い切り</div>` : k === "staff" ? `<div class="hc-once" style="color:#1f6f3f">数えない</div>` : ""}</div>`;
   }).join("");
   return `<div class="myseat ${isTurn(i) ? "turn" : ""}" style="--pc:${SEAT_COLORS[i]}" data-seat="${i}">
     <div class="myhead">${avatar(p, i)}
@@ -1258,8 +1361,8 @@ function drawZoom() {
   let body = "";
   if (z.t === "card") {
     const c = CARDS[z.k];
-    body = `<div class="zcard ${c.once ? "once" : ""}">
-      <div class="row" style="justify-content:space-between"><span class="zc-kind">${c.once ? "使い切りカード" : "スキルカード"}</span><span class="zc-cost">💰 ${c.cost}</span></div>
+    body = `<div class="zcard ${cardCls(z.k)}">
+      <div class="row" style="justify-content:space-between"><span class="zc-kind">${c.company ? "企業カード（使い切り）" : c.once ? "使い切りカード" : "スキルカード"}</span><span class="zc-cost">💰 ${c.cost}</span></div>
       <div class="zc-nm">${esc(c.name)}</div>
       <div class="zc-tx">${esc(c.text)}</div>
       <div class="zc-more">${esc(MORE[z.k] || "")}</div>
@@ -1296,7 +1399,12 @@ function playCard(k, t) {
   const p = me(), c = CARDS[k], ph = V.phase;
   if (!p) return false;
   if (!c.once) { toast(`「${c.name}」は持っているだけで、ずっと効くカードだよ`); return false; }
-  if (k === "hh") {
+  if (c.company) {
+    const ind = indByName(c.company);
+    if (V.boards.includes(ind)) { toast(`「${c.company}」はもう場に出ているよ`); return false; }
+    if (ph === "buy" && !p.buy.done) { act({ t: "company", k }); toast(`${c.name}！ このラウンドだけ「${c.company}」の業界がふえたよ`); return true; }
+    toast("企業カードは、カードを買うときに使えるよ");
+  } else if (k === "hh") {
     if (ph === "buy" && !p.buy.done) { act({ t: "hh" }); toast("ヘッドハンティング！ 山札からもう1枚引いたよ"); return true; }
     toast("ヘッドハンティングは、カードを買うときに使えるよ");
   } else if (k === "reskill") {
@@ -1413,9 +1521,9 @@ function logHtml() {
 
 function cardHtml(k, btn, cls = "") {
   const c = CARDS[k];
-  return `<div class="card ${c.once ? "once" : ""} ${cls}">
+  return `<div class="card ${cardCls(k)} ${cls}">
     <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="nm">${esc(c.name)}</span><span class="row" style="gap:4px;flex-wrap:nowrap"><span class="cost">💰${c.cost}</span><button class="zbtn" title="大きく見る" onclick="event.stopPropagation();zoomCard('${k}')">🔍</button></span></div>
-    <div class="tx">${c.once ? `<span class="chip once">使い切り</span> ` : ""}${esc(c.text)}</div>
+    <div class="tx">${c.company ? `<span class="chip company">企業</span> ` : c.once ? `<span class="chip once">使い切り</span> ` : ""}${esc(c.text)}</div>
     ${btn || ""}
   </div>`;
 }
@@ -1499,7 +1607,7 @@ function rollHtml() {
     }
   } else {
     const ready = p && p.ready;
-    const swap = V.round < ROUNDS && V.poolN ? `<p>親の ${nameTag(V.oya)} が選んだ「${esc(indOf(V.seats[V.oya].pick).name)}」が新しい業界に入れかわり、親が ${nameTag((V.oya + 1) % V.seats.length)} に移ります。</p>` : "";
+    const swap = V.round < ROUNDS && V.poolN && V.seats[V.oya].pick < V.seats.length ? `<p>親の ${nameTag(V.oya)} が選んだ「${esc(indOf(V.seats[V.oya].pick).name)}」が新しい業界に入れかわり、親が ${nameTag((V.oya + 1) % V.seats.length)} に移ります。</p>` : "";
     top = `<div class="panel"><h2>ラウンド ${V.round} おわり</h2>${V.round >= ROUNDS ? "<p>これが最後のラウンド！</p>" : swap}
       ${p ? `<button class="big" onclick="act({t:'ready'})" ${ready ? "disabled" : ""}>${ready ? "待ってる…" : V.round >= ROUNDS ? "結果を見る" : "次のラウンドへ"}</button>` : ""}</div>`;
   }
@@ -1534,6 +1642,8 @@ function helpHtml(open) {
       <li><b>せーので業界を選ぶ</b>：業界カードは参加人数と同じ枚数。かぶらなければその業界のダイスを全部もらえる。かぶったら親に近い人から1個ずつ。</li>
       <li><b>ダイスを振る</b>：出目の合計＋カードの効果がもらえるお金。マイナスなら払う（0より下にはならない）。</li>
       <li><b>業界の入れかえ</b>：親が選んだ業界が新しい業界に入れかわって、親が次の人へ。</li>
+      <li><b>景気イベント</b>：3ラウンドごと（4・7・10ラウンドのはじめ）に不況か好況。📉不況＝お金が多い順に30%・20%・10%取られて、みんなのスキルカードをシャッフルして親から1枚ずつ配り直し。📈好況＝全員に💰+10とカード1枚。</li>
+      <li><b>企業カード</b>（オレンジ）：買い物のときに場へドラッグすると、そのラウンドだけの業界がふえる。</li>
     </ol>
     <p>${ROUNDS}ラウンドでお金が一番多い人の勝ち！ スタートは💰${START_MONEY}。</p>
     <div class="cards">${Object.keys(CARDS).map(k => cardHtml(k)).join("")}</div>
